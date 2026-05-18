@@ -83,6 +83,37 @@ function drawWood(ctx, entity) {
   }
 }
 
+function drawGround(ctx, entity) {
+  const topHeight = Math.min(22, entity.height * 0.32);
+  roundedRect(ctx, -entity.width / 2, -entity.height / 2, entity.width, entity.height, 10);
+  ctx.fillStyle = '#b98055';
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#7c5538';
+  ctx.stroke();
+
+  ctx.fillStyle = '#74bd4a';
+  roundedRect(ctx, -entity.width / 2, -entity.height / 2, entity.width, topHeight, 10);
+  ctx.fill();
+  ctx.strokeStyle = '#4f9737';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-entity.width / 2, -entity.height / 2 + topHeight);
+  for (let x = -entity.width / 2; x <= entity.width / 2; x += 34) {
+    ctx.quadraticCurveTo(x + 17, -entity.height / 2 + topHeight + 12, x + 34, -entity.height / 2 + topHeight);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(111, 75, 47, 0.22)';
+  for (let i = 0; i < 18; i += 1) {
+    const x = -entity.width / 2 + 90 + i * 115;
+    const y = -entity.height / 2 + topHeight + 22 + (i % 4) * 12;
+    ctx.beginPath();
+    ctx.arc(x, y, 4 + (i % 3), 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 function drawRubber(ctx, entity) {
   const wobble = entity.wobble || 0;
   ctx.save();
@@ -179,7 +210,8 @@ function drawBody(ctx, body) {
   ctx.rotate(body.angle);
   if (entity.type === 'arrow') drawArrow(ctx, entity);
   if (entity.type === 'balloon') drawBalloon(ctx, entity);
-  if (entity.material === 'wood') drawWood(ctx, entity);
+  if (entity.type === 'ground') drawGround(ctx, entity);
+  else if (entity.material === 'wood') drawWood(ctx, entity);
   if (entity.material === 'rubber') drawRubber(ctx, entity);
   if (entity.material === 'stone') drawStone(ctx, entity);
   ctx.restore();

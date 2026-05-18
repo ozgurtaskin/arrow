@@ -50,6 +50,16 @@ export function createCirclePiece({ x, y, radius, material, isStatic = false, se
   }), { type: 'piece', material, shape: 'circle', radius, wobble: 0 });
 }
 
+export function createGround({ x = 0, y = 430, width = 2200, height = 110 } = {}) {
+  return attachEntity(Matter.Bodies.rectangle(x, y, width, height, {
+    label: 'ground',
+    isStatic: true,
+    friction: 0.9,
+    restitution: 0.05,
+    chamfer: { radius: 10 }
+  }), { type: 'ground', material: 'wood', shape: 'ground', width, height, wobble: 0 });
+}
+
 export function createHingedPlank({ x, y, length, angle = 0, settings = {} }) {
   const body = createBoxPiece({ x, y, width: length, height: 26, material: 'wood', isStatic: false, angle, settings });
   body.label = 'hinged-plank';

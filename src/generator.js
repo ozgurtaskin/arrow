@@ -35,10 +35,10 @@ export function nextCluster(generator) {
         shape: 'box',
         x: centerX - 105,
         y,
-        width: 150,
-        height: 28,
+        width: 230,
+        height: 30,
         angle: (random() - 0.5) * 0.5,
-        isStatic: random() > 0.45
+        isStatic: true
       },
       {
         kind: 'piece',
@@ -46,10 +46,21 @@ export function nextCluster(generator) {
         shape: 'box',
         x: centerX + 110,
         y: y + 125,
-        width: 132,
+        width: 170,
         height: 38,
         angle: (random() - 0.5) * 0.8,
-        isStatic: random() > 0.5
+        isStatic: true
+      },
+      {
+        kind: 'piece',
+        material: 'wood',
+        shape: 'box',
+        x: centerX + (random() - 0.5) * 340,
+        y: y + 245,
+        width: 120 + random() * 100,
+        height: 26,
+        angle: (random() - 0.5) * 0.65,
+        isStatic: random() > 0.35
       },
       random() > 0.5
         ? { kind: 'hinged-plank', x: centerX - 175, y: y + 205, length: 170, angle: (random() - 0.5) * 0.7 }

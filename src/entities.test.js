@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createArrow, createBalloon, createBoxPiece, createHingedPlank } from './entities.js';
+import { createArrow, createBalloon, createBoxPiece, createGround, createHingedPlank } from './entities.js';
 
 describe('entity factories', () => {
   it('creates arrows with metadata and mass', () => {
@@ -24,5 +24,12 @@ describe('entity factories', () => {
     const balloon = createBalloon({ x: 0, y: 0, radius: 24, color: '#f25565' });
     expect(balloon.isSensor).toBe(true);
     expect(balloon.plugin.entity.type).toBe('balloon');
+  });
+
+  it('creates a static ground platform', () => {
+    const ground = createGround({ x: 0, y: 400, width: 900, height: 90 });
+    expect(ground.isStatic).toBe(true);
+    expect(ground.plugin.entity.type).toBe('ground');
+    expect(ground.plugin.entity.width).toBe(900);
   });
 });

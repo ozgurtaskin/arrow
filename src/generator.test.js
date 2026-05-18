@@ -8,6 +8,7 @@ describe('generator', () => {
     expect(cluster.y).toBeLessThan(0);
     expect(cluster.items.length).toBeGreaterThanOrEqual(3);
     expect(cluster.items.some((item) => item.kind === 'balloon')).toBe(true);
+    expect(cluster.items.some((item) => item.kind === 'piece' && item.isStatic && item.shape === 'box')).toBe(true);
   });
 
   it('continues upward after each cluster', () => {

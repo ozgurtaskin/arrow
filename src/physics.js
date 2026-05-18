@@ -1,6 +1,6 @@
 import Matter from 'matter-js';
 import { classifyArrowCollision, collisionNormalFromPair, getArrowPair, reflectVelocity } from './collisions.js';
-import { createArrow, createBalloon, createBoxPiece, createCirclePiece, createHingedPlank } from './entities.js';
+import { createArrow, createBalloon, createBoxPiece, createCirclePiece, createGround, createHingedPlank } from './entities.js';
 import { createGenerator, nextCluster } from './generator.js';
 import { getMaterialConfig } from './materials.js';
 
@@ -137,6 +137,7 @@ export function createPhysicsWorld(settingsStore) {
     event.pairs.forEach((pair) => handleArrowCollision(world, pair));
   });
 
+  addBody(world, createGround());
   return world;
 }
 
@@ -246,6 +247,7 @@ export function cleanupFarBelow(world, cameraY) {
   for (const body of Matter.Composite.allBodies(world.engine.world)) {
     const entity = entityOf(body);
     if (!entity || entity.state === 'stuck') continue;
+    if (entity.type === 'ground') continue;
     if (body.position.y > cameraY + 1800) removeBody(world, body);
   }
   while (world.arrows.length > world.arrowCap) {
