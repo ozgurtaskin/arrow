@@ -10,6 +10,7 @@ export function createInputController({ canvas, camera, maxPull, onAimStart, onA
   }
 
   function onPointerDown(event) {
+    if (activePointerId !== null) return;
     activePointerId = event.pointerId;
     canvas.setPointerCapture(activePointerId);
     center = getPoint(event);
@@ -32,4 +33,26 @@ export function createInputController({ canvas, camera, maxPull, onAimStart, onA
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
   canvas.addEventListener('pointerup', onPointerUp);
+
+  const mouseTarget = typeof window === 'undefined' ? canvas : window;
+
+  canvas.addEventListener('mousedown', (event) => {
+    if (activePointerId !== null) return;
+    activePointerId = 'mouse';
+    center = getPoint(event);
+    onAimStart(center);
+  });
+
+  mouseTarget.addEventListener('mousemove', (event) => {
+    if (activePointerId !== 'mouse' || !center) return;
+    onAimMove(getAimState({ center, pointer: getPoint(event), maxPull }));
+  });
+
+  mouseTarget.addEventListener('mouseup', (event) => {
+    if (activePointerId !== 'mouse' || !center) return;
+    const aim = getAimState({ center, pointer: getPoint(event), maxPull });
+    activePointerId = null;
+    center = null;
+    onAimEnd(aim);
+  });
 }

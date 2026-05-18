@@ -34,3 +34,47 @@ body,
   color: #2f3b48;
   font-size: 12px;
 }
+
+.settings-panel h1 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.setting-row {
+  display: grid;
+  grid-template-columns: 92px 1fr 54px;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.setting-row span {
+  line-height: 1.15;
+}
+
+.setting-row input,
+.setting-row select {
+  min-width: 0;
+  accent-color: #e64d91;
+}
+
+.setting-row input[type="number"] {
+  width: 54px;
+  box-sizing: border-box;
+}
+
+.setting-row-select {
+  grid-template-columns: 92px 1fr;
+}
+
+@media (max-width: 620px) {
+  .settings-panel {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    width: auto;
+    max-height: 38vh;
+  }
+}
