@@ -1,4 +1,4 @@
-export const BAND_COLORS = ['green', 'yellow', 'blue'];
+export const BAND_COLORS = Object.freeze(['green', 'yellow', 'blue']);
 export const RAINBOW_COLOR = 'rainbow';
 
 function createSeededRandom(seed) {
@@ -20,7 +20,8 @@ function chooseColor(random, previousColor) {
 }
 
 export function generateBandSegments({ seed = 1, minPercent = 0.15, segmentCount = 4 } = {}) {
-  const count = Math.max(1, Math.min(segmentCount, Math.floor(1 / minPercent)));
+  const requestedCount = Number.isFinite(segmentCount) ? Math.floor(segmentCount) : 1;
+  const count = Math.max(1, Math.min(requestedCount, Math.floor(1 / minPercent)));
   const random = createSeededRandom(seed);
   const freeSpace = Math.max(0, 1 - count * minPercent);
   const weights = Array.from({ length: count }, () => 0.2 + random());

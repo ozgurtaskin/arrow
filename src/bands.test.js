@@ -28,6 +28,19 @@ describe('generateBandSegments', () => {
       expect(segments[index].start).toBeCloseTo(segments[index - 1].end);
     }
   });
+
+  it('floors fractional segment counts before calculating segment sizes', () => {
+    const segments = generateBandSegments({ seed: 7, minPercent: 0.15, segmentCount: 4.5 });
+
+    expect(segments).toHaveLength(4);
+    expect(segments.reduce((sum, segment) => sum + segment.size, 0)).toBeCloseTo(1);
+    expect(segments.at(-1).end).toBeCloseTo(1);
+  });
+
+  it('exposes an immutable color list', () => {
+    expect(Object.isFrozen(BAND_COLORS)).toBe(true);
+    expect(() => BAND_COLORS.push('red')).toThrow(TypeError);
+  });
 });
 
 describe('loop position helpers', () => {
@@ -65,6 +78,27 @@ describe('findRuleWoodHit', () => {
     expect(findRuleWoodHit({ shape: 'circle', radius: 50, bands }, { x: 49, y: 0 })).toEqual({
       layer: 'outer',
       color: 'green'
+    });
+  });
+
+  it('returns the matching outer color segment for a rectangle edge hit', () => {
+    const bands = {
+      layers: [
+        {
+          kind: 'segmented',
+          thickness: 12,
+          segments: [
+            { color: 'green', start: 0, end: 0.5, size: 0.5 },
+            { color: 'blue', start: 0.5, end: 1, size: 0.5 }
+          ]
+        },
+        { kind: 'rainbow', thickness: 10, segments: [{ color: 'rainbow', start: 0, end: 1, size: 1 }] }
+      ]
+    };
+
+    expect(findRuleWoodHit({ shape: 'box', width: 100, height: 40, bands }, { x: 0, y: 20 })).toEqual({
+      layer: 'outer',
+      color: 'blue'
     });
   });
 
