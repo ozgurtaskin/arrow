@@ -8,6 +8,19 @@ describe('arrow color queue', () => {
     expect(ARROW_COLORS).toContain(pickArrowColor(() => 0.99));
   });
 
+  it('keeps supported arrow colors immutable', () => {
+    expect(Object.isFrozen(ARROW_COLORS)).toBe(true);
+  });
+
+  it('maps random values to exact color buckets', () => {
+    expect(pickArrowColor(() => 0)).toBe('green');
+    expect(pickArrowColor(() => 1 / 3 - Number.EPSILON)).toBe('green');
+    expect(pickArrowColor(() => 1 / 3)).toBe('yellow');
+    expect(pickArrowColor(() => 2 / 3 - Number.EPSILON)).toBe('yellow');
+    expect(pickArrowColor(() => 2 / 3)).toBe('blue');
+    expect(pickArrowColor(() => 1)).toBe('blue');
+  });
+
   it('stores current and next colors', () => {
     const queue = createArrowColorQueue({ random: () => 0 });
     expect(queue.current).toBe('green');

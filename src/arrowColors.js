@@ -1,4 +1,4 @@
-export const ARROW_COLORS = ['green', 'yellow', 'blue'];
+export const ARROW_COLORS = Object.freeze(['green', 'yellow', 'blue']);
 
 export function pickArrowColor(random = Math.random) {
   const index = Math.min(ARROW_COLORS.length - 1, Math.floor(random() * ARROW_COLORS.length));
