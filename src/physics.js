@@ -1,6 +1,7 @@
 import Matter from 'matter-js';
 import { classifyArrowCollision, collisionNormalFromPair, getArrowPair, reflectVelocity } from './collisions.js';
 import { createArrow, createBalloon, createBoxPiece, createCirclePiece, createGround, createHingedPlank } from './entities.js';
+import { getStuckArrowPose, worldToLocal } from './geometry.js';
 import { createGenerator, nextCluster } from './generator.js';
 import { getMaterialConfig } from './materials.js';
 
@@ -10,17 +11,6 @@ const SETTLE_AGE_MS = 800;
 
 function entityOf(body) {
   return body?.plugin?.entity;
-}
-
-function worldToLocal(body, point) {
-  const dx = point.x - body.position.x;
-  const dy = point.y - body.position.y;
-  const cos = Math.cos(-body.angle);
-  const sin = Math.sin(-body.angle);
-  return {
-    x: dx * cos - dy * sin,
-    y: dx * sin + dy * cos
-  };
 }
 
 function impactPoint(pair, arrow) {
@@ -66,17 +56,10 @@ function stickArrow(world, arrow, target, point) {
   if (target.isStatic) {
     Matter.Body.setStatic(arrow, true);
   } else {
-    const constraint = Matter.Constraint.create({
-      bodyA: target,
-      pointA: worldToLocal(target, point),
-      bodyB: arrow,
-      pointB: worldToLocal(arrow, point),
-      stiffness: 0.98,
-      damping: 0.08,
-      length: 0
-    });
-    world.stuckArrowConstraints.push(constraint);
-    Matter.World.add(world.engine.world, constraint);
+    arrowEntity.stuckToBody = target;
+    arrowEntity.stuckLocalPosition = worldToLocal(target, arrow.position);
+    arrowEntity.stuckRelativeAngle = arrow.angle - target.angle;
+    Matter.Body.setStatic(arrow, true);
   }
   recordImpact(world, point, arrow);
 }
@@ -174,6 +157,11 @@ export function stepPhysics(world, deltaMs) {
     const entity = entityOf(body);
     if (!entity) continue;
     if (entity.wobble) entity.wobble = Math.max(0, entity.wobble - deltaMs / 260);
+    if (entity.type === 'arrow' && entity.state === 'stuck' && entity.stuckToBody) {
+      const pose = getStuckArrowPose(entity.stuckToBody, entity);
+      Matter.Body.setPosition(body, pose.position);
+      Matter.Body.setAngle(body, pose.angle);
+    }
     if (entity.type !== 'arrow' || entity.state !== 'flying') continue;
 
     entity.ageMs = (entity.ageMs || 0) + deltaMs;

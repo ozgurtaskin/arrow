@@ -1,4 +1,5 @@
 import { getWorldBodies } from './physics.js';
+import { getBowPreviewGeometry } from './geometry.js';
 
 export function resizeCanvas(canvas, ctx) {
   const dpr = window.devicePixelRatio || 1;
@@ -245,13 +246,13 @@ function drawParticles(ctx, particles) {
   ctx.globalAlpha = 1;
 }
 
-function drawTrajectory(ctx, aimState) {
+function drawTrajectory(ctx, aimState, startPoint) {
   const step = 18;
   ctx.fillStyle = 'rgba(255,255,255,0.78)';
   for (let i = 1; i <= 10; i += 1) {
     const t = i * step;
-    const x = aimState.center.x + aimState.launchVector.x * t;
-    const y = aimState.center.y + aimState.launchVector.y * t + i * i * 2.2;
+    const x = startPoint.x + aimState.launchVector.x * t;
+    const y = startPoint.y + aimState.launchVector.y * t + i * i * 2.2;
     ctx.beginPath();
     ctx.rect(x - 5, y - 5, 10, 10);
     ctx.fill();
@@ -259,14 +260,11 @@ function drawTrajectory(ctx, aimState) {
 }
 
 function drawBowPreview(ctx, aimState) {
+  const geometry = getBowPreviewGeometry(aimState);
   const center = aimState.center;
-  const pull = {
-    x: center.x + aimState.visualPull.x,
-    y: center.y + aimState.visualPull.y
-  };
   const angle = aimState.angle;
 
-  drawTrajectory(ctx, aimState);
+  drawTrajectory(ctx, aimState, geometry.arrowTip);
   ctx.save();
   ctx.translate(center.x, center.y);
   ctx.rotate(angle);
@@ -279,14 +277,18 @@ function drawBowPreview(ctx, aimState) {
 
   ctx.strokeStyle = '#273746';
   ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(center.x, center.y - 56);
-  ctx.lineTo(pull.x, pull.y);
-  ctx.lineTo(center.x, center.y + 56);
+  ctx.moveTo(geometry.stringTop.x, geometry.stringTop.y);
+  ctx.lineTo(geometry.pullPoint.x, geometry.pullPoint.y);
+  ctx.lineTo(geometry.stringBottom.x, geometry.stringBottom.y);
   ctx.stroke();
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'miter';
 
   ctx.save();
-  ctx.translate(center.x, center.y);
+  ctx.translate(geometry.arrowCenter.x, geometry.arrowCenter.y);
   ctx.rotate(angle);
   drawArrow(ctx, { length: 92 });
   ctx.restore();
