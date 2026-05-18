@@ -12,7 +12,8 @@ export const SETTING_DEFS = {
   cameraFollowY: { type: 'number', min: 0, max: 1, step: 0.05, value: 0.9 },
   cameraZoomToArrow: { type: 'number', min: 0.75, max: 1.6, step: 0.05, value: 1.08 },
   cameraEaseDuration: { type: 'number', min: 0.15, max: 2.5, step: 0.05, value: 0.65 },
-  cameraShake: { type: 'number', min: 0, max: 24, step: 1, value: 9 }
+  cameraShake: { type: 'number', min: 0, max: 24, step: 1, value: 9 },
+  shotRadius: { type: 'number', min: 60, max: 650, step: 10, value: 260 }
 };
 
 export const DEFAULT_SETTINGS = Object.fromEntries(

@@ -235,6 +235,26 @@ function drawHinges(ctx, world) {
   }
 }
 
+function drawShotArea(ctx, shotArea) {
+  if (!shotArea) return;
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.strokeStyle = 'rgba(47, 59, 72, 0.42)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([14, 10]);
+  ctx.beginPath();
+  ctx.arc(shotArea.center.x, shotArea.center.y, shotArea.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(230, 77, 145, 0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(shotArea.center.x, shotArea.center.y, 8, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawParticles(ctx, particles) {
   for (const particle of particles) {
     ctx.globalAlpha = Math.max(0, particle.life / 0.35);
@@ -294,7 +314,7 @@ function drawBowPreview(ctx, aimState) {
   ctx.restore();
 }
 
-export function renderFrame({ ctx, canvas, camera, world, aimState }) {
+export function renderFrame({ ctx, canvas, camera, world, aimState, shotArea }) {
   drawSky(ctx, canvas);
 
   const shake = camera.shakeTime > 0 ? camera.shakeStrength * (camera.shakeTime / 0.18) : 0;
@@ -305,6 +325,7 @@ export function renderFrame({ ctx, canvas, camera, world, aimState }) {
   ctx.translate(canvas.clientWidth / 2 + shakeX, canvas.clientHeight / 2 + shakeY);
   ctx.scale(camera.zoom, camera.zoom);
   ctx.translate(-camera.x, -camera.y);
+  drawShotArea(ctx, shotArea);
   drawHinges(ctx, world);
   getWorldBodies(world).forEach((body) => drawBody(ctx, body));
   drawParticles(ctx, world.particles);

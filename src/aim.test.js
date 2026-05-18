@@ -58,4 +58,37 @@ describe('createInputController', () => {
     expect(onAimEnd.mock.calls[0][0].pullDistance).toBe(30);
     expect(screenToWorld).toHaveBeenCalledWith({ x: 20, y: 50 }, camera);
   });
+
+  it('ignores aim starts outside the active shot area', () => {
+    const listeners = {};
+    const canvas = {
+      addEventListener: vi.fn((type, listener) => {
+        listeners[type] = listener;
+      }),
+      getBoundingClientRect: () => ({ left: 0, top: 0 }),
+      setPointerCapture: vi.fn()
+    };
+    const onAimStart = vi.fn();
+
+    createInputController({
+      canvas,
+      camera: {},
+      maxPull: 120,
+      onAimStart,
+      onAimMove: vi.fn(),
+      onAimEnd: vi.fn(),
+      screenToWorld: (point) => point,
+      canStartAim: (point) => point.x < 50
+    });
+
+    listeners.pointerdown({ pointerId: 1, clientX: 80, clientY: 20 });
+    listeners.pointermove({ pointerId: 1, clientX: 10, clientY: 20 });
+    listeners.pointerup({ pointerId: 1, clientX: 10, clientY: 20 });
+    listeners.pointerdown({ pointerId: 2, clientX: 20, clientY: 20 });
+
+    expect(canvas.setPointerCapture).toHaveBeenCalledTimes(1);
+    expect(canvas.setPointerCapture).toHaveBeenCalledWith(2);
+    expect(onAimStart).toHaveBeenCalledTimes(1);
+    expect(onAimStart).toHaveBeenCalledWith({ x: 20, y: 20 });
+  });
 });

@@ -12,6 +12,7 @@ import {
 } from './physics.js';
 import { renderFrame, resizeCanvas, screenToWorld } from './render.js';
 import { createSettingsStore, SETTING_DEFS } from './settings.js';
+import { isPointInsideShotArea } from './shotArea.js';
 
 const MAX_PULL = 190;
 
@@ -26,6 +27,7 @@ const debugParams = new URLSearchParams(window.location.search);
 let aimState = null;
 let lastNow = performance.now();
 let seenImpactSerial = 0;
+let shotAnchor = { x: 0, y: 260 };
 
 function resize() {
   resizeCanvas(canvas, ctx);
@@ -115,6 +117,7 @@ function updateImpactCamera(settings) {
   const impact = world.lastImpact;
   if (!impact || impact.serial === seenImpactSerial || !shouldMoveCameraToImpact(impact)) return;
   seenImpactSerial = impact.serial;
+  shotAnchor = { x: impact.x, y: impact.y };
   startCameraTransition(camera, {
     x: impact.x,
     y: impact.y,
@@ -133,6 +136,7 @@ function installDebugState() {
         particleCount: world.particles.length,
         lastImpactSerial: world.lastImpact?.serial || 0,
         camera: { x: camera.x, y: camera.y, zoom: camera.zoom },
+        shotAnchor,
         aimActive: Boolean(aimState),
         bodies: bodies.map((body) => ({
           type: body.plugin?.entity?.type,
@@ -179,7 +183,15 @@ function loop(now) {
   ensureGeneratedAhead(world, camera.y, settings);
   cleanupFarBelow(world, camera.y);
   updateDebugDataset();
-  renderFrame({ ctx, canvas, camera, world, aimState, settings });
+  renderFrame({
+    ctx,
+    canvas,
+    camera,
+    world,
+    aimState,
+    settings,
+    shotArea: { center: shotAnchor, radius: settings.shotRadius }
+  });
   requestAnimationFrame(loop);
 }
 
@@ -200,6 +212,10 @@ createInputController({
   camera,
   maxPull: MAX_PULL,
   screenToWorld,
+  canStartAim(point) {
+    const settings = settingsStore.get();
+    return isPointInsideShotArea(point, { center: shotAnchor, radius: settings.shotRadius });
+  },
   onAimStart(center) {
     aimState = { center, pointer: center, visualPull: { x: 0, y: 0 }, launchVector: { x: 1, y: 0 }, angle: 0, pullDistance: 0 };
   },

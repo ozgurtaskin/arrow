@@ -1,6 +1,6 @@
 import { getAimState } from './aim.js';
 
-export function createInputController({ canvas, camera, maxPull, onAimStart, onAimMove, onAimEnd, screenToWorld }) {
+export function createInputController({ canvas, camera, maxPull, onAimStart, onAimMove, onAimEnd, screenToWorld, canStartAim = () => true }) {
   let activePointerId = null;
   let center = null;
 
@@ -11,9 +11,13 @@ export function createInputController({ canvas, camera, maxPull, onAimStart, onA
 
   function onPointerDown(event) {
     if (activePointerId !== null) return;
+    center = getPoint(event);
+    if (!canStartAim(center)) {
+      center = null;
+      return;
+    }
     activePointerId = event.pointerId;
     canvas.setPointerCapture(activePointerId);
-    center = getPoint(event);
     onAimStart(center);
   }
 
@@ -38,8 +42,12 @@ export function createInputController({ canvas, camera, maxPull, onAimStart, onA
 
   canvas.addEventListener('mousedown', (event) => {
     if (activePointerId !== null) return;
-    activePointerId = 'mouse';
     center = getPoint(event);
+    if (!canStartAim(center)) {
+      center = null;
+      return;
+    }
+    activePointerId = 'mouse';
     onAimStart(center);
   });
 
