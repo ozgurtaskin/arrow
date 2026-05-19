@@ -19,6 +19,7 @@ const MAX_PULL = 190;
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
+const settingsToggle = document.querySelector('#settings-toggle');
 const settingsPanel = document.querySelector('#settings-panel');
 const settingsStore = createSettingsStore();
 const camera = createCamera({ width: window.innerWidth, height: window.innerHeight });
@@ -90,11 +91,26 @@ function createSelectControl(key, def) {
   };
 }
 
+function setSettingsOpen(isOpen) {
+  settingsPanel.classList.toggle('is-open', isOpen);
+  settingsPanel.setAttribute('aria-hidden', String(!isOpen));
+  settingsToggle.setAttribute('aria-expanded', String(isOpen));
+}
+
 function buildSettingsPanel() {
   settingsPanel.innerHTML = '';
+  settingsPanel.setAttribute('aria-hidden', 'true');
+  const header = document.createElement('div');
+  header.className = 'settings-header';
   const title = document.createElement('h1');
   title.textContent = 'Settings';
-  settingsPanel.append(title);
+  const closeButton = document.createElement('button');
+  closeButton.className = 'settings-close';
+  closeButton.type = 'button';
+  closeButton.textContent = 'Close';
+  closeButton.addEventListener('click', () => setSettingsOpen(false));
+  header.append(title, closeButton);
+  settingsPanel.append(header);
   const controls = new Map();
   for (const [key, def] of Object.entries(SETTING_DEFS)) {
     const control = def.type === 'select' ? createSelectControl(key, def) : createNumericControl(key, def);
@@ -205,6 +221,10 @@ function loop(now) {
 }
 
 window.addEventListener('resize', resize);
+settingsToggle.addEventListener('click', () => setSettingsOpen(!settingsPanel.classList.contains('is-open')));
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') setSettingsOpen(false);
+});
 resize();
 buildSettingsPanel();
 ensureGeneratedAhead(world, camera.y, settingsStore.get());

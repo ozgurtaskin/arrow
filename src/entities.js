@@ -19,9 +19,10 @@ export function createArrow({ x, y, angle, mass, color = 'green' }) {
   return attachEntity(body, { type: 'arrow', state: 'ready', length: 92, wobble: 0, color });
 }
 
-export function createBalloon({ x, y, radius, color }) {
+export function createBalloon({ x, y, radius, color, isStatic = true }) {
   return attachEntity(Matter.Bodies.circle(x, y, radius, {
     label: 'balloon',
+    isStatic,
     isSensor: true,
     frictionAir: 0.01
   }), { type: 'balloon', color, radius });
@@ -51,7 +52,7 @@ export function createCirclePiece({ x, y, radius, material, isStatic = false, se
   }), { type: 'piece', material, shape: 'circle', radius, wobble: 0 });
 }
 
-export function createRuleWoodBox({ x, y, width, height, angle = 0, seed = 1, colorCount, segmentCount, settings = {} }) {
+export function createRuleWoodBox({ x, y, width, height, angle = 0, seed = 1, colorCount, segmentCount, hasShield = false, settings = {} }) {
   const config = getMaterialConfig('wood', settings);
   return attachEntity(Matter.Bodies.rectangle(x, y, width, height, {
     label: 'rule-wood-box',
@@ -68,11 +69,14 @@ export function createRuleWoodBox({ x, y, width, height, angle = 0, seed = 1, co
     width,
     height,
     wobble: 0,
+    hasShield,
+    shieldIntact: hasShield,
+    shieldThickness: 8,
     bands: createRuleWoodBands({ seed, colorCount, segmentCount })
   });
 }
 
-export function createRuleWoodCircle({ x, y, radius, seed = 1, colorCount, segmentCount, settings = {} }) {
+export function createRuleWoodCircle({ x, y, radius, seed = 1, colorCount, segmentCount, hasShield = false, settings = {} }) {
   const config = getMaterialConfig('wood', settings);
   return attachEntity(Matter.Bodies.circle(x, y, radius, {
     label: 'rule-wood-circle',
@@ -86,6 +90,9 @@ export function createRuleWoodCircle({ x, y, radius, seed = 1, colorCount, segme
     shape: 'circle',
     radius,
     wobble: 0,
+    hasShield,
+    shieldIntact: hasShield,
+    shieldThickness: 8,
     bands: createRuleWoodBands({ seed, colorCount, segmentCount })
   });
 }

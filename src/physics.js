@@ -94,6 +94,22 @@ function bounceArrow(world, arrow, target, pair, settings) {
   recordAnchorableImpact(world, point, arrow);
 }
 
+function shatterArrow(world, arrow, point) {
+  const arrowEntity = entityOf(arrow);
+  addBurst(world, point, arrowEntity?.color || '#f25565');
+  removeBody(world, arrow);
+}
+
+function breakShield(world, arrow, target, point) {
+  const targetEntity = entityOf(target);
+  if (targetEntity) {
+    targetEntity.shieldIntact = false;
+    targetEntity.wobble = 1;
+  }
+  addBurst(world, point, '#20242c');
+  removeBody(world, arrow);
+}
+
 function popBalloon(world, arrow, balloon, point) {
   const balloonEntity = entityOf(balloon);
   addBurst(world, point, balloonEntity?.color || '#f25565');
@@ -118,6 +134,8 @@ function handleArrowCollision(world, pair) {
   if (action === 'pop') popBalloon(world, arrow, target, point);
   if (action === 'stick') stickArrow(world, arrow, target, point);
   if (action === 'bounce') bounceArrow(world, arrow, target, pair, world.settings);
+  if (action === 'shatter') shatterArrow(world, arrow, point);
+  if (action === 'breakShield') breakShield(world, arrow, target, point);
   if (action === 'deflect') recordAnchorableImpact(world, point, arrow);
 }
 
@@ -231,7 +249,7 @@ export function applyLiveSettings(world, settings, changedKey) {
 function spawnCluster(world, cluster, settings) {
   for (const item of cluster.items) {
     if (item.kind === 'balloon') {
-      addBody(world, createBalloon({ x: item.x, y: item.y, radius: 28, color: item.color }));
+      addBody(world, createBalloon({ x: item.x, y: item.y, radius: item.radius || 28, color: item.color, isStatic: item.isStatic }));
     }
     if (item.kind === 'ruleWood' && item.shape === 'box') {
       addBody(world, createRuleWoodBox({ ...item, settings }));

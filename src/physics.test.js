@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import Matter from 'matter-js';
 import { addBody, createPhysicsWorld, fireArrow, stepPhysics } from './physics.js';
-import { createBoxPiece, createRuleWoodCircle } from './entities.js';
+import { createBalloon, createBoxPiece, createRuleWoodCircle } from './entities.js';
 import { createSettingsStore } from './settings.js';
 
 function blueRuleWoodCircle() {
@@ -77,5 +77,51 @@ describe('rule wood physics collisions', () => {
     stepPhysicsFor(world, 220);
 
     expect(arrow.plugin.entity.stickWobble).toBe(0);
+  });
+
+  it('breaks a black shield and consumes the arrow', () => {
+    const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }));
+    const target = createRuleWoodCircle({ x: 0, y: 0, radius: 42, settings: { woodMass: 1 } });
+    target.plugin.entity.shieldIntact = true;
+    addBody(world, target);
+
+    const arrow = fireArrow(world, { x: -150, y: 0, angle: 0, force: 1, color: 'green' });
+
+    for (let index = 0; index < 80 && target.plugin.entity.shieldIntact; index += 1) {
+      stepPhysics(world, 1000 / 60);
+    }
+
+    expect(target.plugin.entity.shieldIntact).toBe(false);
+    expect(world.arrows).not.toContain(arrow);
+    expect(world.engine.world.bodies).toContain(target);
+  });
+
+  it('shatters wrong-color arrows against colored balloons', () => {
+    const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }));
+    const balloon = createBalloon({ x: 0, y: 0, radius: 28, color: 'blue' });
+    addBody(world, balloon);
+
+    const arrow = fireArrow(world, { x: -150, y: 0, angle: 0, force: 1, color: 'green' });
+
+    for (let index = 0; index < 80 && world.arrows.includes(arrow); index += 1) {
+      stepPhysics(world, 1000 / 60);
+    }
+
+    expect(world.arrows).not.toContain(arrow);
+    expect(world.engine.world.bodies).toContain(balloon);
+  });
+
+  it('pops matching-color balloons', () => {
+    const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }));
+    const balloon = createBalloon({ x: 0, y: 0, radius: 28, color: 'green' });
+    addBody(world, balloon);
+
+    fireArrow(world, { x: -150, y: 0, angle: 0, force: 1, color: 'green' });
+
+    for (let index = 0; index < 80 && world.engine.world.bodies.includes(balloon); index += 1) {
+      stepPhysics(world, 1000 / 60);
+    }
+
+    expect(world.engine.world.bodies).not.toContain(balloon);
   });
 });

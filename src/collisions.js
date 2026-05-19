@@ -13,13 +13,14 @@ export function classifyArrowCollision(arrowBody, targetBody, { point, direction
   const arrow = getEntity(arrowBody);
   const target = getEntity(targetBody);
   if (arrow.type !== 'arrow') return 'ignore';
-  if (target.type === 'balloon') return 'pop';
+  if (target.type === 'balloon') return target.color === arrow.color ? 'pop' : 'shatter';
   if (target.type === 'ruleWood') {
+    if (target.shieldIntact) return 'breakShield';
     const localPoint = point ? worldToLocal(targetBody, point) : { x: 0, y: 0 };
     const localDirection = direction ? rotatePoint(direction, -(targetBody.angle || 0)) : null;
     const hitPoint = useSurfacePoint ? projectRuleWoodSurfacePoint(target, localPoint, localDirection) : localPoint;
     const hit = findRuleWoodHit(target, hitPoint);
-    if (hit.color === 'rainbow' || hit.color === 'wood' || hit.color === arrow.color) return 'stick';
+    if (hit.color === 'wood' || hit.color === arrow.color) return 'stick';
     return 'bounce';
   }
   if (target.material === 'wood') return 'stick';

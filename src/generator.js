@@ -11,11 +11,14 @@ function pick(random, values) {
   return values[Math.floor(random() * values.length)];
 }
 
+const BALLOON_COLORS = ['green', 'yellow', 'blue'];
+
 function createRuleWoodBandDesign(random) {
   const colorCount = 1 + Math.floor(random() * 3);
   return {
     colorCount,
-    segmentCount: colorCount === 1 ? 1 : colorCount + Math.floor(random() * (6 - colorCount))
+    segmentCount: colorCount === 1 ? 1 : colorCount + Math.floor(random() * (6 - colorCount)),
+    hasShield: random() < 0.3
   };
 }
 
@@ -23,6 +26,17 @@ function createRuleWoodItem(random, base) {
   return {
     ...base,
     ...createRuleWoodBandDesign(random)
+  };
+}
+
+function createBalloonItem(random, { x, y, radius = 26 }) {
+  return {
+    kind: 'balloon',
+    x,
+    y,
+    radius,
+    color: pick(random, BALLOON_COLORS),
+    isStatic: true
   };
 }
 
@@ -37,13 +51,15 @@ export function nextCluster(generator) {
   generator.index += 1;
 
   const centerX = (random() - 0.5) * 560;
-  const balloonColor = random() > 0.5 ? '#f25565' : '#4ba5ff';
   const dynamicMaterial = pick(random, ['wood', 'rubber', 'stone']);
 
   return {
     y,
     items: [
-      { kind: 'balloon', x: centerX + 92, y: y - 120, color: balloonColor },
+      createBalloonItem(random, { x: centerX + 92, y: y - 150, radius: 26 + random() * 8 }),
+      createBalloonItem(random, { x: centerX - 225 + random() * 80, y: y - 55, radius: 22 + random() * 7 }),
+      createBalloonItem(random, { x: centerX + 215 + random() * 80, y: y + 65, radius: 22 + random() * 7 }),
+      createBalloonItem(random, { x: centerX - 30 + random() * 80, y: y + 180, radius: 20 + random() * 7 }),
       createRuleWoodItem(random, {
         kind: 'ruleWood',
         shape: 'box',

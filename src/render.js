@@ -170,7 +170,8 @@ function drawStone(ctx, entity) {
 }
 
 function drawBalloon(ctx, entity) {
-  ctx.fillStyle = entity.color;
+  const balloonColor = colorForArrow(entity.color);
+  ctx.fillStyle = balloonColor;
   ctx.strokeStyle = 'rgba(31, 55, 73, 0.25)';
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -181,7 +182,7 @@ function drawBalloon(ctx, entity) {
   ctx.beginPath();
   ctx.ellipse(-8, -10, 7, 12, -0.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = entity.color;
+  ctx.fillStyle = balloonColor;
   ctx.beginPath();
   ctx.moveTo(-5, entity.radius - 2);
   ctx.lineTo(5, entity.radius - 2);
@@ -286,6 +287,17 @@ function drawCircularRuleWood(ctx, entity) {
     ctx.stroke();
   }
   ctx.restore();
+
+  if (entity.shieldIntact) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineWidth = entity.shieldThickness || 8;
+    ctx.strokeStyle = '#17191f';
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(0.1, entity.radius - ctx.lineWidth / 2), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 function drawRectRuleWood(ctx, entity) {
@@ -358,6 +370,18 @@ function drawRectRuleWood(ctx, entity) {
     strokeSegment(segment.start, segment.end, outerInset);
   }
   ctx.restore();
+
+  if (entity.shieldIntact) {
+    ctx.save();
+    roundedRect(ctx, -halfWidth, -halfHeight, loopWidth, loopHeight, 6);
+    ctx.clip();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = entity.shieldThickness || 8;
+    ctx.strokeStyle = '#17191f';
+    strokeSegment(0, 1, ctx.lineWidth / 2);
+    ctx.restore();
+  }
 }
 
 function drawRuleWood(ctx, entity, time) {

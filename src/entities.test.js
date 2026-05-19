@@ -45,6 +45,21 @@ describe('entity factories', () => {
     expect(new Set(body.plugin.entity.bands.layers[0].segments.map((segment) => segment.color)).size).toBe(1);
   });
 
+  it('can create rule wood with an intact black shield band', () => {
+    const body = createRuleWoodCircle({
+      x: 10,
+      y: 20,
+      radius: 55,
+      seed: 9,
+      hasShield: true,
+      settings: { woodMass: 1 }
+    });
+
+    expect(body.plugin.entity.hasShield).toBe(true);
+    expect(body.plugin.entity.shieldIntact).toBe(true);
+    expect(body.plugin.entity.shieldThickness).toBe(8);
+  });
+
   it('creates static rule wood circles with deterministic band metadata', () => {
     const body = createRuleWoodCircle({ x: 10, y: 20, radius: 55, seed: 9, settings: { woodMass: 1 } });
     expect(body.isStatic).toBe(true);
@@ -60,9 +75,11 @@ describe('entity factories', () => {
   });
 
   it('creates balloons as sensors', () => {
-    const balloon = createBalloon({ x: 0, y: 0, radius: 24, color: '#f25565' });
+    const balloon = createBalloon({ x: 0, y: 0, radius: 24, color: 'blue' });
     expect(balloon.isSensor).toBe(true);
+    expect(balloon.isStatic).toBe(true);
     expect(balloon.plugin.entity.type).toBe('balloon');
+    expect(balloon.plugin.entity.color).toBe('blue');
   });
 
   it('creates a static ground platform', () => {

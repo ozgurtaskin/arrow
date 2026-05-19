@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { classifyArrowCollision, reflectVelocity } from './collisions.js';
 
 const arrow = { plugin: { entity: { type: 'arrow', color: 'green' } } };
+const blueArrow = { plugin: { entity: { type: 'arrow', color: 'blue' } } };
 
 function ruleWoodTarget() {
   return {
@@ -42,6 +43,7 @@ function ruleWoodBoxTarget() {
         shape: 'box',
         width: 100,
         height: 40,
+        shieldIntact: false,
         bands: {
           layers: [
             {
@@ -65,7 +67,11 @@ describe('classifyArrowCollision', () => {
     expect(classifyArrowCollision(arrow, { plugin: { entity: { type: 'piece', material: 'wood' } } })).toBe('stick');
     expect(classifyArrowCollision(arrow, { plugin: { entity: { type: 'piece', material: 'rubber' } } })).toBe('bounce');
     expect(classifyArrowCollision(arrow, { plugin: { entity: { type: 'piece', material: 'stone' } } })).toBe('deflect');
-    expect(classifyArrowCollision(arrow, { plugin: { entity: { type: 'balloon' } } })).toBe('pop');
+  });
+
+  it('only pops balloons when arrow color matches', () => {
+    expect(classifyArrowCollision(arrow, { plugin: { entity: { type: 'balloon', color: 'green' } } })).toBe('pop');
+    expect(classifyArrowCollision(arrow, { plugin: { entity: { type: 'balloon', color: 'blue' } } })).toBe('shatter');
   });
 });
 
@@ -93,6 +99,15 @@ describe('rule wood collision classification', () => {
       direction: { x: 1, y: 0 },
       useSurfacePoint: true
     })).toBe('bounce');
+  });
+
+  it('breaks an intact black shield before exposing color bands', () => {
+    const target = ruleWoodTarget();
+    target.plugin.entity.shieldIntact = true;
+
+    expect(classifyArrowCollision(blueArrow, target, { point: { x: 49, y: 0 } })).toBe('breakShield');
+    target.plugin.entity.shieldIntact = false;
+    expect(classifyArrowCollision(blueArrow, target, { point: { x: 49, y: 0 } })).toBe('bounce');
   });
 });
 

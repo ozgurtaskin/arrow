@@ -22,31 +22,83 @@ body,
 
 .settings-panel {
   position: fixed;
-  right: 12px;
-  top: 12px;
-  width: min(300px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-height: none;
   overflow: auto;
-  padding: 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 28px rgba(37, 50, 64, 0.2);
+  box-sizing: border-box;
+  padding: max(18px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  background: rgba(246, 251, 255, 0.96);
   color: #2f3b48;
-  font-size: 12px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  z-index: 20;
+}
+
+.settings-panel.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.settings-toggle {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  top: max(14px, env(safe-area-inset-top));
+  z-index: 15;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 22px rgba(37, 50, 64, 0.18);
+  color: #2f3b48;
+  font: 700 13px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.settings-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto 16px;
+  padding: 0 0 12px;
+  background: rgba(246, 251, 255, 0.96);
+}
+
+.settings-close {
+  min-height: 40px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 8px;
+  background: #2f3b48;
+  color: #fff;
+  font: 700 13px/1 Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
 .settings-panel h1 {
-  margin: 0 0 10px;
-  font-size: 14px;
+  margin: 0;
+  font-size: 20px;
   line-height: 1.2;
 }
 
 .setting-row {
   display: grid;
-  grid-template-columns: 92px 1fr 54px;
-  gap: 8px;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(120px, 1fr) 64px;
+  gap: 10px;
   align-items: center;
-  margin: 8px 0;
+  max-width: 720px;
+  min-height: 42px;
+  margin: 10px auto;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(47, 59, 72, 0.1);
 }
 
 .setting-row span {
@@ -60,21 +112,22 @@ body,
 }
 
 .setting-row input[type="number"] {
-  width: 54px;
+  width: 64px;
   box-sizing: border-box;
 }
 
 .setting-row-select {
-  grid-template-columns: 92px 1fr;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(120px, 1fr);
 }
 
 @media (max-width: 620px) {
-  .settings-panel {
-    left: 12px;
-    right: 12px;
-    top: auto;
-    bottom: 12px;
-    width: auto;
-    max-height: 38vh;
+  .setting-row,
+  .setting-row-select {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .setting-row input[type="number"] {
+    width: 100%;
   }
 }
