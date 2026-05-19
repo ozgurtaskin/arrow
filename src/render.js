@@ -285,15 +285,41 @@ function drawRectRuleWood(ctx, entity) {
   const halfHeight = loopHeight / 2;
   const perimeter = 2 * (loopWidth + loopHeight);
 
+  function clampToInset(value, min, max, inset) {
+    const lower = min + inset;
+    const upper = max - inset;
+    if (lower > upper) return (min + max) / 2;
+    return Math.max(lower, Math.min(upper, value));
+  }
+
   function pointAtOriginalLoop(t, inset) {
+    const safeInset = Math.max(0, Math.min(inset, halfWidth, halfHeight));
     let distance = (((t % 1) + 1) % 1) * perimeter;
-    if (distance <= loopWidth) return { x: -halfWidth + distance, y: -halfHeight + inset };
+    if (distance <= loopWidth) {
+      return {
+        x: clampToInset(-halfWidth + distance, -halfWidth, halfWidth, safeInset),
+        y: -halfHeight + safeInset
+      };
+    }
     distance -= loopWidth;
-    if (distance <= loopHeight) return { x: halfWidth - inset, y: -halfHeight + distance };
+    if (distance <= loopHeight) {
+      return {
+        x: halfWidth - safeInset,
+        y: clampToInset(-halfHeight + distance, -halfHeight, halfHeight, safeInset)
+      };
+    }
     distance -= loopHeight;
-    if (distance <= loopWidth) return { x: halfWidth - distance, y: halfHeight - inset };
+    if (distance <= loopWidth) {
+      return {
+        x: clampToInset(halfWidth - distance, -halfWidth, halfWidth, safeInset),
+        y: halfHeight - safeInset
+      };
+    }
     distance -= loopWidth;
-    return { x: -halfWidth + inset, y: halfHeight - distance };
+    return {
+      x: -halfWidth + safeInset,
+      y: clampToInset(halfHeight - distance, -halfHeight, halfHeight, safeInset)
+    };
   }
 
   function strokeSegment(startT, endT, inset) {
@@ -307,6 +333,10 @@ function drawRectRuleWood(ctx, entity) {
     ctx.stroke();
   }
 
+  ctx.save();
+  roundedRect(ctx, -halfWidth, -halfHeight, loopWidth, loopHeight, 6);
+  ctx.clip();
+
   ctx.lineCap = 'butt';
   ctx.lineJoin = 'round';
   ctx.lineWidth = outer.thickness;
@@ -317,6 +347,7 @@ function drawRectRuleWood(ctx, entity) {
 
   ctx.lineWidth = rainbow.thickness;
   strokeStaticRainbowSegments(ctx, (start, end) => strokeSegment(start, end, rainbowInset));
+  ctx.restore();
 
   const coreWidth = Math.max(1, entity.width - coreInset * 2);
   const coreHeight = Math.max(1, entity.height - coreInset * 2);
