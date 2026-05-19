@@ -1,6 +1,18 @@
 import { getWorldBodies } from './physics.js';
 import { getBowPreviewGeometry } from './geometry.js';
 
+const ARROW_COLOR_STYLES = {
+  green: '#39e85f',
+  yellow: '#ffd91f',
+  blue: '#2458ff'
+};
+
+const BAND_STYLES = {
+  green: '#2cff4c',
+  yellow: '#ffdf24',
+  blue: '#244bff'
+};
+
 export function resizeCanvas(canvas, ctx) {
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.floor(window.innerWidth * dpr);
@@ -36,6 +48,10 @@ function roundedRect(ctx, x, y, width, height, radius) {
   ctx.quadraticCurveTo(x, y + height, x, y + height - r);
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
+}
+
+function colorForArrow(color) {
+  return ARROW_COLOR_STYLES[color] || '#e94f28';
 }
 
 function drawSky(ctx, canvas) {
@@ -173,6 +189,7 @@ function drawBalloon(ctx, entity) {
 
 function drawArrow(ctx, entity) {
   const length = entity.length || 92;
+  const arrowColor = colorForArrow(entity.color);
   ctx.lineWidth = 5;
   ctx.strokeStyle = '#8c5a25';
   ctx.beginPath();
@@ -180,7 +197,7 @@ function drawArrow(ctx, entity) {
   ctx.lineTo(length / 2 - 12, 0);
   ctx.stroke();
 
-  ctx.fillStyle = '#f3a12d';
+  ctx.fillStyle = arrowColor;
   ctx.strokeStyle = '#8c5a25';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -192,7 +209,7 @@ function drawArrow(ctx, entity) {
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = '#e94f28';
+  ctx.fillStyle = arrowColor;
   for (const sign of [-1, 1]) {
     ctx.beginPath();
     ctx.moveTo(-length / 2 + 6, 0);
@@ -203,7 +220,128 @@ function drawArrow(ctx, entity) {
   }
 }
 
-function drawBody(ctx, body) {
+function drawCircularRuleWood(ctx, entity, time = 0) {
+  const outer = entity.bands.layers[0];
+  const rainbow = entity.bands.layers[1];
+  const outerRadius = Math.max(0.1, entity.radius - outer.thickness / 2);
+  const rainbowRadius = Math.max(0.1, entity.radius - outer.thickness - rainbow.thickness / 2);
+  const coreRadius = Math.max(0.1, entity.radius - outer.thickness - rainbow.thickness);
+
+  ctx.lineCap = 'butt';
+  ctx.lineWidth = outer.thickness;
+  for (const segment of outer.segments) {
+    ctx.beginPath();
+    ctx.strokeStyle = BAND_STYLES[segment.color];
+    ctx.arc(0, 0, outerRadius, segment.start * Math.PI * 2, segment.end * Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.lineWidth = rainbow.thickness;
+  for (let index = 0; index < 18; index += 1) {
+    const start = ((index / 18) * Math.PI * 2 + time * 0.003) % (Math.PI * 2);
+    const end = start + Math.PI * 2 / 18 + 0.03;
+    ctx.strokeStyle = `hsl(${(index * 28 + time * 0.08) % 360} 92% 58%)`;
+    ctx.beginPath();
+    ctx.arc(0, 0, rainbowRadius, start, end);
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+  ctx.fillStyle = '#15100d';
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#201711';
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+  ctx.lineWidth = 2;
+  for (let y = -coreRadius * 0.55; y <= coreRadius * 0.55; y += 14) {
+    ctx.beginPath();
+    ctx.moveTo(-coreRadius * 0.55, y);
+    ctx.quadraticCurveTo(0, y + 4, coreRadius * 0.55, y - 3);
+    ctx.stroke();
+  }
+}
+
+function drawRectRuleWood(ctx, entity, time = 0) {
+  const outer = entity.bands.layers[0];
+  const rainbow = entity.bands.layers[1];
+  const outerInset = outer.thickness / 2;
+  const rainbowInset = outer.thickness + rainbow.thickness / 2;
+  const coreInset = outer.thickness + rainbow.thickness;
+  const perimeter = 2 * (entity.width + entity.height);
+
+  function pointAt(t, inset) {
+    const width = Math.max(1, entity.width - inset * 2);
+    const height = Math.max(1, entity.height - inset * 2);
+    const insetPerimeter = 2 * (width + height);
+    let distance = t * insetPerimeter;
+    if (distance <= width) return { x: -width / 2 + distance, y: -height / 2 };
+    distance -= width;
+    if (distance <= height) return { x: width / 2, y: -height / 2 + distance };
+    distance -= height;
+    if (distance <= width) return { x: width / 2 - distance, y: height / 2 };
+    distance -= width;
+    return { x: -width / 2, y: height / 2 - distance };
+  }
+
+  function strokeSegment(startT, endT, inset) {
+    const samples = Math.max(2, Math.ceil((endT - startT) * perimeter / 18));
+    ctx.beginPath();
+    for (let index = 0; index <= samples; index += 1) {
+      const point = pointAt(startT + ((endT - startT) * index) / samples, inset);
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
+  }
+
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = outer.thickness;
+  for (const segment of outer.segments) {
+    ctx.strokeStyle = BAND_STYLES[segment.color];
+    strokeSegment(segment.start, segment.end, outerInset);
+  }
+
+  ctx.lineWidth = rainbow.thickness;
+  for (let index = 0; index < 18; index += 1) {
+    const start = (index / 18 + time * 0.00012) % 1;
+    const end = start + 1 / 18;
+    ctx.strokeStyle = `hsl(${(index * 28 + time * 0.08) % 360} 92% 58%)`;
+    if (end <= 1) strokeSegment(start, end, rainbowInset);
+    else {
+      strokeSegment(start, 1, rainbowInset);
+      strokeSegment(0, end - 1, rainbowInset);
+    }
+  }
+
+  const coreWidth = Math.max(1, entity.width - coreInset * 2);
+  const coreHeight = Math.max(1, entity.height - coreInset * 2);
+  roundedRect(ctx, -coreWidth / 2, -coreHeight / 2, coreWidth, coreHeight, 6);
+  ctx.fillStyle = '#15100d';
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#201711';
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+  ctx.lineWidth = 2;
+  for (let y = -coreHeight * 0.28; y <= coreHeight * 0.28; y += 12) {
+    ctx.beginPath();
+    ctx.moveTo(-coreWidth * 0.42, y);
+    ctx.quadraticCurveTo(0, y + 4, coreWidth * 0.42, y - 3);
+    ctx.stroke();
+  }
+}
+
+function drawRuleWood(ctx, entity, time) {
+  if (entity.shape === 'circle') drawCircularRuleWood(ctx, entity, time);
+  else drawRectRuleWood(ctx, entity, time);
+}
+
+function drawBody(ctx, body, time) {
   const entity = body.plugin?.entity;
   if (!entity) return;
   ctx.save();
@@ -212,6 +350,7 @@ function drawBody(ctx, body) {
   if (entity.type === 'arrow') drawArrow(ctx, entity);
   if (entity.type === 'balloon') drawBalloon(ctx, entity);
   if (entity.type === 'ground') drawGround(ctx, entity);
+  else if (entity.type === 'ruleWood') drawRuleWood(ctx, entity, time);
   else if (entity.material === 'wood') drawWood(ctx, entity);
   if (entity.material === 'rubber') drawRubber(ctx, entity);
   if (entity.material === 'stone') drawStone(ctx, entity);
@@ -310,11 +449,40 @@ function drawBowPreview(ctx, aimState) {
   ctx.save();
   ctx.translate(geometry.arrowCenter.x, geometry.arrowCenter.y);
   ctx.rotate(angle);
-  drawArrow(ctx, { length: 92 });
+  drawArrow(ctx, { length: 92, color: aimState.arrowColor });
   ctx.restore();
 }
 
-export function renderFrame({ ctx, canvas, camera, world, aimState, shotArea }) {
+function drawArrowColorHud(ctx, arrowColors) {
+  if (!arrowColors) return;
+  const x = 18;
+  const y = 18;
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+  ctx.strokeStyle = 'rgba(47, 59, 72, 0.18)';
+  ctx.lineWidth = 2;
+  roundedRect(ctx, x, y, 122, 56, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  function swatch(label, color, offsetX) {
+    ctx.fillStyle = '#2f3b48';
+    ctx.font = '600 10px Inter, sans-serif';
+    ctx.fillText(label, x + offsetX, y + 14);
+    ctx.fillStyle = colorForArrow(color);
+    ctx.beginPath();
+    ctx.arc(x + offsetX + 18, y + 34, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(47, 59, 72, 0.24)';
+    ctx.stroke();
+  }
+
+  swatch('NOW', arrowColors.current, 12);
+  swatch('NEXT', arrowColors.next, 68);
+  ctx.restore();
+}
+
+export function renderFrame({ ctx, canvas, camera, world, aimState, shotArea, arrowColors, time = 0 }) {
   drawSky(ctx, canvas);
 
   const shake = camera.shakeTime > 0 ? camera.shakeStrength * (camera.shakeTime / 0.18) : 0;
@@ -327,8 +495,9 @@ export function renderFrame({ ctx, canvas, camera, world, aimState, shotArea }) 
   ctx.translate(-camera.x, -camera.y);
   drawShotArea(ctx, shotArea);
   drawHinges(ctx, world);
-  getWorldBodies(world).forEach((body) => drawBody(ctx, body));
+  getWorldBodies(world).forEach((body) => drawBody(ctx, body, time));
   drawParticles(ctx, world.particles);
   if (aimState) drawBowPreview(ctx, aimState);
   ctx.restore();
+  drawArrowColorHud(ctx, arrowColors);
 }
