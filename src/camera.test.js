@@ -10,6 +10,11 @@ describe('easeInOut', () => {
 });
 
 describe('camera transitions', () => {
+  it('starts zoomed out to show a wider play area', () => {
+    const camera = createCamera({ width: 400, height: 800 });
+    expect(camera.zoom).toBe(0.8);
+  });
+
   it('does not move until a transition starts', () => {
     const camera = createCamera({ width: 400, height: 800 });
     updateCamera(camera, 0.2);

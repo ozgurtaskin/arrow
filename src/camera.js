@@ -7,7 +7,7 @@ export function createCamera({ width, height }) {
   return {
     x: 0,
     y: 0,
-    zoom: 1,
+    zoom: 0.8,
     width,
     height,
     shakeTime: 0,
