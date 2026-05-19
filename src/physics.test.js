@@ -20,6 +20,13 @@ function blueRuleWoodCircle() {
   return body;
 }
 
+function stepPhysicsFor(world, durationMs) {
+  const deltaMs = 1000 / 60;
+  for (let elapsedMs = 0; elapsedMs < durationMs; elapsedMs += deltaMs) {
+    stepPhysics(world, deltaMs);
+  }
+}
+
 describe('rule wood physics collisions', () => {
   it('rejects nonmatching bounces as future shot anchors', () => {
     const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }));
@@ -68,7 +75,7 @@ describe('rule wood physics collisions', () => {
     expect(arrow.plugin.entity.state).toBe('stuck');
     expect(arrow.plugin.entity.stickWobble).toBeGreaterThan(0);
 
-    stepPhysics(world, 220);
+    stepPhysicsFor(world, 220);
 
     expect(arrow.plugin.entity.stickWobble).toBe(0);
   });
