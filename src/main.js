@@ -1,4 +1,5 @@
 import './styles.css';
+import { advanceArrowColorQueue, createArrowColorQueue } from './arrowColors.js';
 import { updateCamera, createCamera, startCameraTransition, startShake } from './camera.js';
 import { computeLaunchForce } from './forceCurve.js';
 import { createInputController } from './input.js';
@@ -28,6 +29,7 @@ let aimState = null;
 let lastNow = performance.now();
 let seenImpactSerial = 0;
 let shotAnchor = { x: 0, y: 260 };
+let arrowColorQueue = createArrowColorQueue();
 
 function resize() {
   resizeCanvas(canvas, ctx);
@@ -138,6 +140,7 @@ function installDebugState() {
         camera: { x: camera.x, y: camera.y, zoom: camera.zoom },
         shotAnchor,
         aimActive: Boolean(aimState),
+        arrowColors: { ...arrowColorQueue },
         bodies: bodies.map((body) => ({
           type: body.plugin?.entity?.type,
           material: body.plugin?.entity?.material,
@@ -157,6 +160,8 @@ function updateDebugDataset() {
   canvas.dataset.lastImpactSerial = String(world.lastImpact?.serial || 0);
   canvas.dataset.cameraY = String(Math.round(camera.y));
   canvas.dataset.aimActive = String(Boolean(aimState));
+  canvas.dataset.currentArrowColor = arrowColorQueue.current;
+  canvas.dataset.nextArrowColor = arrowColorQueue.next;
 }
 
 function maybeRunAutofireProbe() {
@@ -167,7 +172,8 @@ function maybeRunAutofireProbe() {
     x: target.position.x - 180,
     y: target.position.y,
     angle: 0,
-    force: 1
+    force: 1,
+    color: arrowColorQueue.current
   });
   startShake(camera, settingsStore.get().cameraShake);
   updateDebugDataset();
@@ -190,7 +196,9 @@ function loop(now) {
     world,
     aimState,
     settings,
-    shotArea: { center: shotAnchor, radius: settings.shotRadius }
+    shotArea: { center: shotAnchor, radius: settings.shotRadius },
+    arrowColors: arrowColorQueue,
+    time: now
   });
   requestAnimationFrame(loop);
 }
@@ -217,10 +225,18 @@ createInputController({
     return isPointInsideShotArea(point, { center: shotAnchor, radius: settings.shotRadius });
   },
   onAimStart(center) {
-    aimState = { center, pointer: center, visualPull: { x: 0, y: 0 }, launchVector: { x: 1, y: 0 }, angle: 0, pullDistance: 0 };
+    aimState = {
+      center,
+      pointer: center,
+      visualPull: { x: 0, y: 0 },
+      launchVector: { x: 1, y: 0 },
+      angle: 0,
+      pullDistance: 0,
+      arrowColor: arrowColorQueue.current
+    };
   },
   onAimMove(nextAimState) {
-    aimState = nextAimState;
+    aimState = { ...nextAimState, arrowColor: arrowColorQueue.current };
   },
   onAimEnd(finalAimState) {
     const settings = settingsStore.get();
@@ -236,8 +252,10 @@ createInputController({
         x: finalAimState.center.x,
         y: finalAimState.center.y,
         angle: finalAimState.angle,
-        force
+        force,
+        color: arrowColorQueue.current
       });
+      arrowColorQueue = advanceArrowColorQueue(arrowColorQueue);
       startShake(camera, settings.cameraShake);
     }
     aimState = null;

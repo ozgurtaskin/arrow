@@ -183,8 +183,8 @@ export function stepPhysics(world, deltaMs) {
   }
 }
 
-export function fireArrow(world, { x, y, angle, force }) {
-  const arrow = createArrow({ x, y, angle, mass: world.settings.arrowMass });
+export function fireArrow(world, { x, y, angle, force, color = 'green' }) {
+  const arrow = createArrow({ x, y, angle, mass: world.settings.arrowMass, color });
   const entity = entityOf(arrow);
   entity.state = 'flying';
   entity.ageMs = 0;
