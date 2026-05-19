@@ -13,6 +13,10 @@ const BAND_STYLES = {
   blue: '#244bff'
 };
 
+const STATIC_RAINBOW_STYLES = ['#ff3f7f', '#ff8a24', '#ffdf24', '#37e85f', '#27d7ff', '#4b5bff'];
+const MAX_PULL_FOR_STRING = 190;
+const STICK_WOBBLE_MS = 160;
+
 export function resizeCanvas(canvas, ctx) {
   const dpr = window.devicePixelRatio || 1;
   canvas.width = Math.floor(window.innerWidth * dpr);
@@ -190,37 +194,54 @@ function drawBalloon(ctx, entity) {
 function drawArrow(ctx, entity) {
   const length = entity.length || 92;
   const arrowColor = colorForArrow(entity.color);
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = '#8c5a25';
-  ctx.beginPath();
-  ctx.moveTo(-length / 2, 0);
-  ctx.lineTo(length / 2 - 12, 0);
-  ctx.stroke();
+  const wobbleTime = entity.stickWobble || 0;
+  const wobbleRatio = Math.max(0, Math.min(1, wobbleTime / STICK_WOBBLE_MS));
+  const bend = Math.sin(wobbleRatio * Math.PI * 5) * wobbleRatio * 5;
 
-  ctx.fillStyle = arrowColor;
-  ctx.strokeStyle = '#8c5a25';
-  ctx.lineWidth = 2;
+  if (entity.state === 'flying') {
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let index = 0; index < 3; index += 1) {
+      ctx.globalAlpha = 0.18 - index * 0.045;
+      ctx.strokeStyle = arrowColor;
+      ctx.lineWidth = 2.2 - index * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(-length / 2 - 10 - index * 10, 0);
+      ctx.lineTo(-length / 2 - 2 - index * 8, 0);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = arrowColor;
+  ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.moveTo(length / 2, 0);
-  ctx.lineTo(length / 2 - 17, -9);
-  ctx.lineTo(length / 2 - 13, 0);
-  ctx.lineTo(length / 2 - 17, 9);
-  ctx.closePath();
-  ctx.fill();
+  ctx.quadraticCurveTo(6, bend * 0.35, -length / 2, bend);
   ctx.stroke();
 
-  ctx.fillStyle = arrowColor;
-  for (const sign of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(-length / 2 + 6, 0);
-    ctx.lineTo(-length / 2 + 24, sign * 13);
-    ctx.lineTo(-length / 2 + 31, sign * 4);
-    ctx.closePath();
-    ctx.fill();
+  ctx.strokeStyle = 'rgba(39, 55, 70, 0.28)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(length / 2 - 8, 0);
+  ctx.lineTo(length / 2, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function strokeStaticRainbowSegments(ctx, drawSegment) {
+  for (let index = 0; index < STATIC_RAINBOW_STYLES.length; index += 1) {
+    const start = index / STATIC_RAINBOW_STYLES.length;
+    const end = (index + 1) / STATIC_RAINBOW_STYLES.length;
+    ctx.strokeStyle = STATIC_RAINBOW_STYLES[index];
+    drawSegment(start, end);
   }
 }
 
-function drawCircularRuleWood(ctx, entity, time = 0) {
+function drawCircularRuleWood(ctx, entity) {
   const outer = entity.bands.layers[0];
   const rainbow = entity.bands.layers[1];
   const outerRadius = Math.max(0.1, entity.radius - outer.thickness / 2);
@@ -237,14 +258,11 @@ function drawCircularRuleWood(ctx, entity, time = 0) {
   }
 
   ctx.lineWidth = rainbow.thickness;
-  for (let index = 0; index < 18; index += 1) {
-    const start = ((index / 18) * Math.PI * 2 + time * 0.003) % (Math.PI * 2);
-    const end = start + Math.PI * 2 / 18 + 0.03;
-    ctx.strokeStyle = `hsl(${(index * 28 + time * 0.08) % 360} 92% 58%)`;
+  strokeStaticRainbowSegments(ctx, (start, end) => {
     ctx.beginPath();
-    ctx.arc(0, 0, rainbowRadius, start, end);
+    ctx.arc(0, 0, rainbowRadius, start * Math.PI * 2, end * Math.PI * 2);
     ctx.stroke();
-  }
+  });
 
   ctx.beginPath();
   ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
@@ -253,18 +271,9 @@ function drawCircularRuleWood(ctx, entity, time = 0) {
   ctx.lineWidth = 3;
   ctx.strokeStyle = '#201711';
   ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-  ctx.lineWidth = 2;
-  for (let y = -coreRadius * 0.55; y <= coreRadius * 0.55; y += 14) {
-    ctx.beginPath();
-    ctx.moveTo(-coreRadius * 0.55, y);
-    ctx.quadraticCurveTo(0, y + 4, coreRadius * 0.55, y - 3);
-    ctx.stroke();
-  }
 }
 
-function drawRectRuleWood(ctx, entity, time = 0) {
+function drawRectRuleWood(ctx, entity) {
   const outer = entity.bands.layers[0];
   const rainbow = entity.bands.layers[1];
   const outerInset = outer.thickness / 2;
@@ -307,16 +316,7 @@ function drawRectRuleWood(ctx, entity, time = 0) {
   }
 
   ctx.lineWidth = rainbow.thickness;
-  for (let index = 0; index < 18; index += 1) {
-    const start = (index / 18 + time * 0.00012) % 1;
-    const end = start + 1 / 18;
-    ctx.strokeStyle = `hsl(${(index * 28 + time * 0.08) % 360} 92% 58%)`;
-    if (end <= 1) strokeSegment(start, end, rainbowInset);
-    else {
-      strokeSegment(start, 1, rainbowInset);
-      strokeSegment(0, end - 1, rainbowInset);
-    }
-  }
+  strokeStaticRainbowSegments(ctx, (start, end) => strokeSegment(start, end, rainbowInset));
 
   const coreWidth = Math.max(1, entity.width - coreInset * 2);
   const coreHeight = Math.max(1, entity.height - coreInset * 2);
@@ -326,15 +326,6 @@ function drawRectRuleWood(ctx, entity, time = 0) {
   ctx.lineWidth = 3;
   ctx.strokeStyle = '#201711';
   ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-  ctx.lineWidth = 2;
-  for (let y = -coreHeight * 0.28; y <= coreHeight * 0.28; y += 12) {
-    ctx.beginPath();
-    ctx.moveTo(-coreWidth * 0.42, y);
-    ctx.quadraticCurveTo(0, y + 4, coreWidth * 0.42, y - 3);
-    ctx.stroke();
-  }
 }
 
 function drawRuleWood(ctx, entity, time) {
@@ -428,15 +419,18 @@ function drawBowPreview(ctx, aimState) {
   ctx.save();
   ctx.translate(center.x, center.y);
   ctx.rotate(angle);
-  ctx.strokeStyle = '#d7791f';
-  ctx.lineWidth = 9;
+  ctx.strokeStyle = '#d98225';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.arc(0, 0, 58, -1.15, 1.15);
   ctx.stroke();
   ctx.restore();
 
+  const pullRatio = Math.max(0, Math.min(1, (aimState.pullDistance || 0) / MAX_PULL_FOR_STRING));
+  const stringWidth = Math.max(0.8, 3.2 - pullRatio * 2.2);
   ctx.strokeStyle = '#273746';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = stringWidth;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
