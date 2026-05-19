@@ -1,3 +1,5 @@
+import { BALLOON_REWARD_MAX, BALLOON_REWARD_MIN } from './tuning.js';
+
 function mulberry32(seed) {
   return function random() {
     let t = (seed += 0x6d2b79f5);
@@ -36,7 +38,7 @@ function createBalloonItem(random, { x, y, radius = 26 }) {
     y,
     radius,
     color: pick(random, BALLOON_COLORS),
-    rewardArrows: 2 + Math.floor(random() * 4),
+    rewardArrows: BALLOON_REWARD_MIN + Math.floor(random() * (BALLOON_REWARD_MAX - BALLOON_REWARD_MIN + 1)),
     isStatic: true
   };
 }
@@ -61,6 +63,10 @@ export function nextCluster(generator) {
       createBalloonItem(random, { x: centerX - 225 + random() * 80, y: y - 55, radius: 22 + random() * 7 }),
       createBalloonItem(random, { x: centerX + 215 + random() * 80, y: y + 65, radius: 22 + random() * 7 }),
       createBalloonItem(random, { x: centerX - 30 + random() * 80, y: y + 180, radius: 20 + random() * 7 }),
+      createBalloonItem(random, { x: centerX - 160 + random() * 90, y: y - 235, radius: 18 + random() * 6 }),
+      createBalloonItem(random, { x: centerX + 155 + random() * 90, y: y - 235, radius: 18 + random() * 6 }),
+      createBalloonItem(random, { x: centerX - 290 + random() * 85, y: y + 145, radius: 18 + random() * 7 }),
+      createBalloonItem(random, { x: centerX + 250 + random() * 85, y: y + 205, radius: 18 + random() * 7 }),
       createRuleWoodItem(random, {
         kind: 'ruleWood',
         shape: 'box',

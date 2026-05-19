@@ -1,3 +1,5 @@
+import { DEFAULT_SHOT_RADIUS } from './tuning.js';
+
 export const SETTING_DEFS = {
   gravity: { type: 'number', min: -2, max: 4, step: 0.05, value: 1 },
   launchSpeed: { type: 'number', min: 0.2, max: 3, step: 0.05, value: 1 },
@@ -13,7 +15,7 @@ export const SETTING_DEFS = {
   cameraZoomToArrow: { type: 'number', min: 0.5, max: 1.6, step: 0.05, value: 0.8 },
   cameraEaseDuration: { type: 'number', min: 0.15, max: 2.5, step: 0.05, value: 0.65 },
   cameraShake: { type: 'number', min: 0, max: 24, step: 1, value: 9 },
-  shotRadius: { type: 'number', min: 60, max: 650, step: 10, value: 260 }
+  shotRadius: { type: 'number', min: 60, max: 650, step: 10, value: DEFAULT_SHOT_RADIUS }
 };
 
 export const DEFAULT_SETTINGS = Object.fromEntries(

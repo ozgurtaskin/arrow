@@ -1,5 +1,6 @@
 import { getWorldBodies } from './physics.js';
 import { getBowPreviewGeometry } from './geometry.js';
+import { ARROW_LENGTH, MAX_PULL } from './tuning.js';
 
 const ARROW_COLOR_STYLES = {
   green: '#39e85f',
@@ -13,7 +14,6 @@ const BAND_STYLES = {
   blue: '#244bff'
 };
 
-const MAX_PULL_FOR_STRING = 190;
 const STICK_WOBBLE_MS = 160;
 
 export function resizeCanvas(canvas, ctx) {
@@ -170,7 +170,10 @@ function drawStone(ctx, entity) {
 }
 
 function drawBalloon(ctx, entity) {
+  const drag = entity.dragOffset || { x: 0, y: 0 };
   const balloonColor = colorForArrow(entity.color);
+  ctx.save();
+  ctx.translate(drag.x, drag.y);
   ctx.fillStyle = balloonColor;
   ctx.strokeStyle = 'rgba(31, 55, 73, 0.25)';
   ctx.lineWidth = 3;
@@ -199,10 +202,11 @@ function drawBalloon(ctx, entity) {
   ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
   ctx.strokeText(`+${reward}`, 0, 2);
   ctx.fillText(`+${reward}`, 0, 2);
+  ctx.restore();
 }
 
 function drawArrow(ctx, entity) {
-  const length = entity.length || 92;
+  const length = entity.length || ARROW_LENGTH;
   const arrowColor = colorForArrow(entity.color);
   const wobbleTime = entity.stickWobble || 0;
   const wobbleRatio = Math.max(0, Math.min(1, wobbleTime / STICK_WOBBLE_MS));
@@ -547,7 +551,7 @@ function drawBowPreview(ctx, aimState) {
   ctx.stroke();
   ctx.restore();
 
-  const pullRatio = Math.max(0, Math.min(1, (aimState.pullDistance || 0) / MAX_PULL_FOR_STRING));
+  const pullRatio = Math.max(0, Math.min(1, (aimState.pullDistance || 0) / MAX_PULL));
   const stringWidth = Math.max(0.8, 3.2 - pullRatio * 2.2);
   ctx.strokeStyle = '#273746';
   ctx.lineWidth = stringWidth;
@@ -564,7 +568,7 @@ function drawBowPreview(ctx, aimState) {
   ctx.save();
   ctx.translate(geometry.arrowCenter.x, geometry.arrowCenter.y);
   ctx.rotate(angle);
-  drawArrow(ctx, { length: 92, color: aimState.arrowColor });
+  drawArrow(ctx, { length: ARROW_LENGTH, color: aimState.arrowColor });
   ctx.restore();
 }
 

@@ -18,6 +18,9 @@ const ARROW_SPEED = 42;
 const SETTLE_SPEED = 0.42;
 const SETTLE_AGE_MS = 800;
 const STICK_WOBBLE_MS = 160;
+const BALLOON_DRAG_MAX_OFFSET = 22;
+const BALLOON_DRAG_SPRING = 42;
+const BALLOON_DRAG_DAMPING = 10;
 
 function entityOf(body) {
   return body?.plugin?.entity;
@@ -144,6 +147,42 @@ function popBalloon(world, arrow, balloon, point) {
   recordAnchorableImpact(world, point, arrow);
 }
 
+function normalizeVector(vector) {
+  const magnitude = Matter.Vector.magnitude(vector);
+  if (magnitude <= 0.0001) return null;
+  return { x: vector.x / magnitude, y: vector.y / magnitude, magnitude };
+}
+
+function getBalloonRoundPiecePair(bodyA, bodyB) {
+  const entityA = entityOf(bodyA);
+  const entityB = entityOf(bodyB);
+  if (entityA?.type === 'balloon' && entityB?.type === 'piece' && entityB.shape === 'circle' && !bodyB.isStatic) {
+    return { balloon: bodyA, roundPiece: bodyB };
+  }
+  if (entityB?.type === 'balloon' && entityA?.type === 'piece' && entityA.shape === 'circle' && !bodyA.isStatic) {
+    return { balloon: bodyB, roundPiece: bodyA };
+  }
+  return null;
+}
+
+function nudgeBalloonFromRoundPiece(pair) {
+  const balloonPair = getBalloonRoundPiecePair(pair.bodyA, pair.bodyB);
+  if (!balloonPair) return;
+  const { balloon, roundPiece } = balloonPair;
+  const balloonEntity = entityOf(balloon);
+  const velocityDirection = normalizeVector(roundPiece.velocity);
+  const fallbackDirection = normalizeVector(Matter.Vector.sub(balloon.position, roundPiece.position));
+  const direction = velocityDirection || fallbackDirection;
+  if (!direction) return;
+
+  const speed = velocityDirection?.magnitude || 0;
+  const impulse = Math.min(220, 80 + speed * 14);
+  balloonEntity.dragOffset = balloonEntity.dragOffset || { x: 0, y: 0 };
+  balloonEntity.dragVelocity = balloonEntity.dragVelocity || { x: 0, y: 0 };
+  balloonEntity.dragVelocity.x += direction.x * impulse;
+  balloonEntity.dragVelocity.y += direction.y * impulse;
+}
+
 function handleArrowCollision(world, pair) {
   const arrowPair = getArrowPair(pair.bodyA, pair.bodyB);
   if (!arrowPair) return;
@@ -164,6 +203,33 @@ function handleArrowCollision(world, pair) {
   if (action === 'shatter') shatterArrow(world, arrow, point);
   if (action === 'breakShield') breakShield(world, arrow, target, point);
   if (action === 'deflect') recordAnchorableImpact(world, point, arrow);
+}
+
+function updateBalloonDrag(entity, dt) {
+  if (!entity.dragOffset && !entity.dragVelocity) return;
+  const offset = entity.dragOffset || { x: 0, y: 0 };
+  const velocity = entity.dragVelocity || { x: 0, y: 0 };
+  velocity.x += -offset.x * BALLOON_DRAG_SPRING * dt;
+  velocity.y += -offset.y * BALLOON_DRAG_SPRING * dt;
+  const damping = Math.max(0, 1 - BALLOON_DRAG_DAMPING * dt);
+  velocity.x *= damping;
+  velocity.y *= damping;
+  offset.x += velocity.x * dt;
+  offset.y += velocity.y * dt;
+
+  const magnitude = Math.hypot(offset.x, offset.y);
+  if (magnitude > BALLOON_DRAG_MAX_OFFSET) {
+    const scale = BALLOON_DRAG_MAX_OFFSET / magnitude;
+    offset.x *= scale;
+    offset.y *= scale;
+  }
+  if (Math.hypot(offset.x, offset.y) < 0.05 && Math.hypot(velocity.x, velocity.y) < 2) {
+    entity.dragOffset = { x: 0, y: 0 };
+    entity.dragVelocity = { x: 0, y: 0 };
+    return;
+  }
+  entity.dragOffset = offset;
+  entity.dragVelocity = velocity;
 }
 
 export function createPhysicsWorld(settingsStore, events = {}) {
@@ -187,7 +253,10 @@ export function createPhysicsWorld(settingsStore, events = {}) {
   };
 
   Matter.Events.on(engine, 'collisionStart', (event) => {
-    event.pairs.forEach((pair) => handleArrowCollision(world, pair));
+    event.pairs.forEach((pair) => {
+      handleArrowCollision(world, pair);
+      nudgeBalloonFromRoundPiece(pair);
+    });
   });
 
   addBody(world, createGround());
@@ -243,6 +312,7 @@ export function stepPhysics(world, deltaMs) {
     const entity = entityOf(body);
     if (!entity) continue;
     if (entity.wobble) entity.wobble = Math.max(0, entity.wobble - deltaMs / 260);
+    if (entity.type === 'balloon') updateBalloonDrag(entity, dt);
     if (entity.stickWobble) entity.stickWobble = Math.max(0, entity.stickWobble - deltaMs);
     if (entity.type === 'arrow' && entity.state === 'stuck' && entity.stuckToBody) {
       const pose = getStuckArrowPose(entity.stuckToBody, entity);

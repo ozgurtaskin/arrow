@@ -1,3 +1,5 @@
+import { ARROW_LENGTH } from './tuning.js';
+
 export function rotatePoint(point, angle) {
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
@@ -29,7 +31,7 @@ export function getStuckArrowPose(targetBody, arrowEntity) {
   };
 }
 
-export function getBowPreviewGeometry(aimState, { bowRadius = 58, arcLimit = 1.15, arrowLength = 92, nockInset = 8 } = {}) {
+export function getBowPreviewGeometry(aimState, { bowRadius = 58, arcLimit = 1.15, arrowLength = ARROW_LENGTH, nockInset = 8 } = {}) {
   const pullPoint = {
     x: aimState.center.x + aimState.visualPull.x,
     y: aimState.center.y + aimState.visualPull.y

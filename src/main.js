@@ -14,8 +14,7 @@ import {
 import { renderFrame, resizeCanvas, screenToWorld } from './render.js';
 import { createSettingsStore, SETTING_DEFS } from './settings.js';
 import { isPointInsideShotArea } from './shotArea.js';
-
-const MAX_PULL = 190;
+import { MAX_PULL } from './tuning.js';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');

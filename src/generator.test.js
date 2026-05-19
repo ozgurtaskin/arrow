@@ -46,12 +46,12 @@ describe('generator', () => {
     const balloons = cluster.items.filter((item) => item.kind === 'balloon');
     const otherItems = cluster.items.filter((item) => item.kind !== 'balloon');
 
-    expect(balloons.length).toBeGreaterThanOrEqual(Math.floor(otherItems.length * 0.75));
+    expect(balloons.length).toBeGreaterThanOrEqual(otherItems.length * 2);
     expect(balloons.every((item) => BAND_COLORS.includes(item.color))).toBe(true);
     expect(balloons.every((item) => item.isStatic)).toBe(true);
   });
 
-  it('assigns each balloon a visible arrow reward between 2 and 5', () => {
+  it('assigns each balloon a visible arrow reward between 2 and 3', () => {
     const generator = createGenerator({ seed: 17, startY: 0 });
     const rewards = [];
     for (let index = 0; index < 6; index += 1) {
@@ -59,7 +59,7 @@ describe('generator', () => {
     }
 
     expect(rewards.length).toBeGreaterThan(0);
-    expect(rewards.every((reward) => reward >= 2 && reward <= 5)).toBe(true);
+    expect(rewards.every((reward) => reward >= 2 && reward <= 3)).toBe(true);
     expect(new Set(rewards).size).toBeGreaterThan(1);
   });
 

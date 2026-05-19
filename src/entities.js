@@ -1,6 +1,7 @@
 import Matter from 'matter-js';
 import { createRuleWoodBands } from './bands.js';
 import { getMaterialConfig } from './materials.js';
+import { ARROW_LENGTH } from './tuning.js';
 
 function attachEntity(body, entity) {
   body.plugin = body.plugin || {};
@@ -9,14 +10,14 @@ function attachEntity(body, entity) {
 }
 
 export function createArrow({ x, y, angle, mass, color = 'green' }) {
-  const body = Matter.Bodies.rectangle(x, y, 92, 8, {
+  const body = Matter.Bodies.rectangle(x, y, ARROW_LENGTH, 8, {
     label: 'arrow',
     angle,
     frictionAir: 0.002,
     chamfer: { radius: 3 }
   });
   Matter.Body.setMass(body, mass);
-  return attachEntity(body, { type: 'arrow', state: 'ready', length: 92, wobble: 0, color });
+  return attachEntity(body, { type: 'arrow', state: 'ready', length: ARROW_LENGTH, wobble: 0, color });
 }
 
 export function createBalloon({ x, y, radius, color, isStatic = true, rewardArrows = 3 }) {

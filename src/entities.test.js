@@ -14,6 +14,7 @@ describe('entity factories', () => {
     const arrow = createArrow({ x: 10, y: 20, angle: 0.5, mass: 2 });
     expect(arrow.label).toBe('arrow');
     expect(arrow.plugin.entity.type).toBe('arrow');
+    expect(arrow.plugin.entity.length).toBeCloseTo(55.2);
     expect(arrow.mass).toBeCloseTo(2);
   });
 
@@ -84,8 +85,8 @@ describe('entity factories', () => {
   });
 
   it('stores balloon arrow reward metadata', () => {
-    const balloon = createBalloon({ x: 0, y: 0, radius: 24, color: 'green', rewardArrows: 5 });
-    expect(balloon.plugin.entity.rewardArrows).toBe(5);
+    const balloon = createBalloon({ x: 0, y: 0, radius: 24, color: 'green', rewardArrows: 2 });
+    expect(balloon.plugin.entity.rewardArrows).toBe(2);
   });
 
   it('creates a static ground platform', () => {

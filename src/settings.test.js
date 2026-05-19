@@ -6,6 +6,7 @@ describe('createSettingsStore', () => {
     const store = createSettingsStore();
     expect(store.get()).toEqual(DEFAULT_SETTINGS);
     expect(store.get().cameraZoomToArrow).toBe(0.8);
+    expect(store.get().shotRadius).toBe(200);
   });
 
   it('clamps numeric settings and notifies subscribers with changed keys', () => {

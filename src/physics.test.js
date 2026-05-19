@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import Matter from 'matter-js';
 import { addBody, createPhysicsWorld, fireArrow, stepPhysics } from './physics.js';
-import { createBalloon, createBoxPiece, createRuleWoodCircle } from './entities.js';
+import { createBalloon, createBoxPiece, createCirclePiece, createRuleWoodCircle } from './entities.js';
 import { createSettingsStore } from './settings.js';
 
 function blueRuleWoodCircle() {
@@ -118,7 +118,7 @@ describe('rule wood physics collisions', () => {
         popEvents.push(event);
       }
     });
-    const balloon = createBalloon({ x: 0, y: 0, radius: 28, color: 'green', rewardArrows: 4 });
+    const balloon = createBalloon({ x: 0, y: 0, radius: 28, color: 'green', rewardArrows: 3 });
     addBody(world, balloon);
 
     fireArrow(world, { x: -150, y: 0, angle: 0, force: 1, color: 'green' });
@@ -129,8 +129,31 @@ describe('rule wood physics collisions', () => {
 
     expect(world.engine.world.bodies).not.toContain(balloon);
     expect(popEvents).toHaveLength(1);
-    expect(popEvents[0].reward).toBe(4);
-    expect(world.floaters.some((floater) => floater.text === '+4')).toBe(true);
+    expect(popEvents[0].reward).toBe(3);
+    expect(world.floaters.some((floater) => floater.text === '+3')).toBe(true);
     expect(world.comicPops.length).toBeGreaterThan(0);
+  });
+
+  it('gives balloons soft drag when hit by dynamic round pieces', () => {
+    const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }));
+    const balloon = createBalloon({ x: 0, y: 0, radius: 28, color: 'blue' });
+    const ball = createCirclePiece({
+      x: -54,
+      y: 0,
+      radius: 24,
+      material: 'stone',
+      isStatic: false,
+      settings: { stoneMass: 1 }
+    });
+    addBody(world, balloon);
+    addBody(world, ball);
+    Matter.Body.setVelocity(ball, { x: 8, y: 0 });
+
+    for (let index = 0; index < 20 && !(balloon.plugin.entity.dragOffset?.x > 0); index += 1) {
+      stepPhysics(world, 1000 / 60);
+    }
+
+    expect(balloon.plugin.entity.dragOffset.x).toBeGreaterThan(0);
+    expect(Math.abs(balloon.plugin.entity.dragOffset.y)).toBeLessThan(2);
   });
 });
