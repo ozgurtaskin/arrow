@@ -58,6 +58,28 @@ function addBurst(world, point, color) {
   }
 }
 
+function addComicPop(world, point, color) {
+  world.comicPops.push({
+    x: point.x,
+    y: point.y,
+    color,
+    life: 0.28,
+    maxLife: 0.28
+  });
+}
+
+function addFloatingText(world, point, text, color) {
+  world.floaters.push({
+    x: point.x,
+    y: point.y - 18,
+    vy: -58,
+    text,
+    color,
+    life: 0.82,
+    maxLife: 0.82
+  });
+}
+
 function stickArrow(world, arrow, target, point) {
   const arrowEntity = entityOf(arrow);
   if (!arrowEntity || arrowEntity.state !== 'flying') return;
@@ -112,7 +134,12 @@ function breakShield(world, arrow, target, point) {
 
 function popBalloon(world, arrow, balloon, point) {
   const balloonEntity = entityOf(balloon);
-  addBurst(world, point, balloonEntity?.color || '#f25565');
+  const reward = balloonEntity?.rewardArrows || 3;
+  const color = balloonEntity?.color || '#f25565';
+  addBurst(world, point, color);
+  addComicPop(world, point, color);
+  addFloatingText(world, point, `+${reward}`, color);
+  world.events.onBalloonPop?.({ point, reward, color });
   removeBody(world, balloon);
   recordAnchorableImpact(world, point, arrow);
 }
@@ -139,16 +166,19 @@ function handleArrowCollision(world, pair) {
   if (action === 'deflect') recordAnchorableImpact(world, point, arrow);
 }
 
-export function createPhysicsWorld(settingsStore) {
+export function createPhysicsWorld(settingsStore, events = {}) {
   const settings = settingsStore.get();
   const engine = Matter.Engine.create();
   engine.gravity.y = settings.gravity;
   const world = {
     engine,
     settings,
+    events,
     arrows: [],
     materialBodies: [],
     particles: [],
+    floaters: [],
+    comicPops: [],
     stuckArrowConstraints: [],
     lastImpact: null,
     impactSerial: 0,
@@ -182,16 +212,32 @@ export function removeBody(world, body) {
 
 export function stepPhysics(world, deltaMs) {
   Matter.Engine.update(world.engine, deltaMs);
+  const dt = deltaMs / 1000;
 
   world.particles = world.particles
     .map((particle) => ({
       ...particle,
-      x: particle.x + particle.vx * (deltaMs / 1000),
-      y: particle.y + particle.vy * (deltaMs / 1000),
-      vy: particle.vy + 280 * (deltaMs / 1000),
-      life: particle.life - deltaMs / 1000
+      x: particle.x + particle.vx * dt,
+      y: particle.y + particle.vy * dt,
+      vy: particle.vy + 280 * dt,
+      life: particle.life - dt
     }))
     .filter((particle) => particle.life > 0);
+
+  world.floaters = world.floaters
+    .map((floater) => ({
+      ...floater,
+      y: floater.y + floater.vy * dt,
+      life: floater.life - dt
+    }))
+    .filter((floater) => floater.life > 0);
+
+  world.comicPops = world.comicPops
+    .map((pop) => ({
+      ...pop,
+      life: pop.life - dt
+    }))
+    .filter((pop) => pop.life > 0);
 
   for (const body of Matter.Composite.allBodies(world.engine.world)) {
     const entity = entityOf(body);
@@ -249,7 +295,14 @@ export function applyLiveSettings(world, settings, changedKey) {
 function spawnCluster(world, cluster, settings) {
   for (const item of cluster.items) {
     if (item.kind === 'balloon') {
-      addBody(world, createBalloon({ x: item.x, y: item.y, radius: item.radius || 28, color: item.color, isStatic: item.isStatic }));
+      addBody(world, createBalloon({
+        x: item.x,
+        y: item.y,
+        radius: item.radius || 28,
+        color: item.color,
+        isStatic: item.isStatic,
+        rewardArrows: item.rewardArrows
+      }));
     }
     if (item.kind === 'ruleWood' && item.shape === 'box') {
       addBody(world, createRuleWoodBox({ ...item, settings }));

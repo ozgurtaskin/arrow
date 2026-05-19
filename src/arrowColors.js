@@ -18,3 +18,10 @@ export function advanceArrowColorQueue(queue, random = Math.random) {
     next: pickArrowColor(random)
   };
 }
+
+export function swapArrowColorQueue(queue) {
+  return {
+    current: queue.next,
+    next: queue.current
+  };
+}

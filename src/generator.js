@@ -36,6 +36,7 @@ function createBalloonItem(random, { x, y, radius = 26 }) {
     y,
     radius,
     color: pick(random, BALLOON_COLORS),
+    rewardArrows: 2 + Math.floor(random() * 4),
     isStatic: true
   };
 }

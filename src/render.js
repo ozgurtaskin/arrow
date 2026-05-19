@@ -54,7 +54,7 @@ function roundedRect(ctx, x, y, width, height, radius) {
 }
 
 function colorForArrow(color) {
-  return ARROW_COLOR_STYLES[color] || '#e94f28';
+  return ARROW_COLOR_STYLES[color] || color || '#e94f28';
 }
 
 function drawSky(ctx, canvas) {
@@ -189,6 +189,16 @@ function drawBalloon(ctx, entity) {
   ctx.lineTo(0, entity.radius + 9);
   ctx.closePath();
   ctx.fill();
+
+  const reward = entity.rewardArrows || 3;
+  ctx.font = `800 ${Math.max(14, entity.radius * 0.52)}px Inter, ui-sans-serif, system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = 'rgba(36, 45, 56, 0.46)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+  ctx.strokeText(`+${reward}`, 0, 2);
+  ctx.fillText(`+${reward}`, 0, 2);
 }
 
 function drawArrow(ctx, entity) {
@@ -443,14 +453,68 @@ function drawShotArea(ctx, shotArea) {
 }
 
 function drawParticles(ctx, particles) {
+  ctx.save();
   for (const particle of particles) {
     ctx.globalAlpha = Math.max(0, particle.life / 0.35);
-    ctx.fillStyle = particle.color;
+    ctx.fillStyle = colorForArrow(particle.color);
     ctx.beginPath();
     ctx.arc(particle.x, particle.y, 4, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawComicPops(ctx, pops) {
+  for (const pop of pops) {
+    const maxLife = pop.maxLife || 0.28;
+    const progress = 1 - Math.max(0, pop.life) / maxLife;
+    const alpha = Math.max(0, pop.life / maxLife);
+    const points = 12;
+    const inner = 10 + progress * 12;
+    const outer = 24 + progress * 30;
+    ctx.save();
+    ctx.translate(pop.x, pop.y);
+    ctx.rotate(progress * 0.35);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+    ctx.strokeStyle = colorForArrow(pop.color);
+    ctx.lineWidth = 4;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let index = 0; index < points * 2; index += 1) {
+      const radius = index % 2 === 0 ? outer : inner;
+      const angle = -Math.PI / 2 + (Math.PI * index) / points;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawFloatingTexts(ctx, floaters) {
+  for (const floater of floaters) {
+    const maxLife = floater.maxLife || 0.82;
+    const alpha = Math.max(0, floater.life / maxLife);
+    const progress = 1 - alpha;
+    ctx.save();
+    ctx.translate(floater.x, floater.y);
+    ctx.scale(1 + progress * 0.16, 1 + progress * 0.16);
+    ctx.globalAlpha = alpha;
+    ctx.font = '900 24px Inter, ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(47, 59, 72, 0.62)';
+    ctx.fillStyle = colorForArrow(floater.color);
+    ctx.strokeText(floater.text, 0, 0);
+    ctx.fillText(floater.text, 0, 0);
+    ctx.restore();
+  }
 }
 
 function drawTrajectory(ctx, aimState, startPoint) {
@@ -504,36 +568,43 @@ function drawBowPreview(ctx, aimState) {
   ctx.restore();
 }
 
-function drawArrowColorHud(ctx, arrowColors) {
+function drawHud(ctx, arrowColors, hud = {}) {
   if (!arrowColors) return;
   const x = 18;
   const y = 18;
+  const ammo = hud.ammo ?? 0;
+  const highScore = hud.highScore ?? 0;
   ctx.save();
   ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
   ctx.strokeStyle = 'rgba(47, 59, 72, 0.18)';
   ctx.lineWidth = 2;
-  roundedRect(ctx, x, y, 122, 56, 8);
+  roundedRect(ctx, x, y, 164, 86, 8);
   ctx.fill();
   ctx.stroke();
 
   function swatch(label, color, offsetX) {
     ctx.fillStyle = '#2f3b48';
     ctx.font = '600 10px Inter, sans-serif';
-    ctx.fillText(label, x + offsetX, y + 14);
+    ctx.fillText(label, x + offsetX, y + 51);
     ctx.fillStyle = colorForArrow(color);
     ctx.beginPath();
-    ctx.arc(x + offsetX + 18, y + 34, 12, 0, Math.PI * 2);
+    ctx.arc(x + offsetX + 18, y + 71, 11, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = 'rgba(47, 59, 72, 0.24)';
     ctx.stroke();
   }
 
+  ctx.fillStyle = '#2f3b48';
+  ctx.font = '800 14px Inter, ui-sans-serif, system-ui, sans-serif';
+  ctx.fillText(`ARROWS ${ammo}`, x + 12, y + 22);
+  ctx.font = '700 12px Inter, ui-sans-serif, system-ui, sans-serif';
+  ctx.fillText(`HIGH ${highScore}`, x + 12, y + 40);
   swatch('NOW', arrowColors.current, 12);
   swatch('NEXT', arrowColors.next, 68);
   ctx.restore();
 }
 
-export function renderFrame({ ctx, canvas, camera, world, aimState, shotArea, arrowColors, time = 0 }) {
+export function renderFrame({ ctx, canvas, camera, world, aimState, shotArea, arrowColors, hud, time = 0 }) {
   drawSky(ctx, canvas);
 
   const shake = camera.shakeTime > 0 ? camera.shakeStrength * (camera.shakeTime / 0.18) : 0;
@@ -547,8 +618,10 @@ export function renderFrame({ ctx, canvas, camera, world, aimState, shotArea, ar
   drawShotArea(ctx, shotArea);
   drawHinges(ctx, world);
   getWorldBodies(world).forEach((body) => drawBody(ctx, body, time));
+  drawComicPops(ctx, world.comicPops);
   drawParticles(ctx, world.particles);
+  drawFloatingTexts(ctx, world.floaters);
   if (aimState) drawBowPreview(ctx, aimState);
   ctx.restore();
-  drawArrowColorHud(ctx, arrowColors);
+  drawHud(ctx, arrowColors, hud);
 }

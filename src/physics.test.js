@@ -112,8 +112,13 @@ describe('rule wood physics collisions', () => {
   });
 
   it('pops matching-color balloons', () => {
-    const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }));
-    const balloon = createBalloon({ x: 0, y: 0, radius: 28, color: 'green' });
+    const popEvents = [];
+    const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }), {
+      onBalloonPop(event) {
+        popEvents.push(event);
+      }
+    });
+    const balloon = createBalloon({ x: 0, y: 0, radius: 28, color: 'green', rewardArrows: 4 });
     addBody(world, balloon);
 
     fireArrow(world, { x: -150, y: 0, angle: 0, force: 1, color: 'green' });
@@ -123,5 +128,9 @@ describe('rule wood physics collisions', () => {
     }
 
     expect(world.engine.world.bodies).not.toContain(balloon);
+    expect(popEvents).toHaveLength(1);
+    expect(popEvents[0].reward).toBe(4);
+    expect(world.floaters.some((floater) => floater.text === '+4')).toBe(true);
+    expect(world.comicPops.length).toBeGreaterThan(0);
   });
 });

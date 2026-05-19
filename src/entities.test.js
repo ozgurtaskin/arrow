@@ -80,6 +80,12 @@ describe('entity factories', () => {
     expect(balloon.isStatic).toBe(true);
     expect(balloon.plugin.entity.type).toBe('balloon');
     expect(balloon.plugin.entity.color).toBe('blue');
+    expect(balloon.plugin.entity.rewardArrows).toBe(3);
+  });
+
+  it('stores balloon arrow reward metadata', () => {
+    const balloon = createBalloon({ x: 0, y: 0, radius: 24, color: 'green', rewardArrows: 5 });
+    expect(balloon.plugin.entity.rewardArrows).toBe(5);
   });
 
   it('creates a static ground platform', () => {

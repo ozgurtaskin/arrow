@@ -1,5 +1,5 @@
 import './styles.css';
-import { advanceArrowColorQueue, createArrowColorQueue } from './arrowColors.js';
+import { advanceArrowColorQueue, createArrowColorQueue, swapArrowColorQueue } from './arrowColors.js';
 import { updateCamera, createCamera, startCameraTransition, startShake } from './camera.js';
 import { computeLaunchForce } from './forceCurve.js';
 import { createInputController } from './input.js';
@@ -21,16 +21,28 @@ const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
 const settingsToggle = document.querySelector('#settings-toggle');
 const settingsPanel = document.querySelector('#settings-panel');
+const swapArrowButton = document.querySelector('#swap-arrow');
 const settingsStore = createSettingsStore();
 const camera = createCamera({ width: window.innerWidth, height: window.innerHeight });
-const world = createPhysicsWorld(settingsStore);
 const debugParams = new URLSearchParams(window.location.search);
+const STARTING_ARROWS = 10;
+const START_SCORE_Y = 260;
+const SCORE_WORLD_UNITS = 10;
 
 let aimState = null;
 let lastNow = performance.now();
 let seenImpactSerial = 0;
-let shotAnchor = { x: 0, y: 260 };
+let shotAnchor = { x: 0, y: START_SCORE_Y };
 let arrowColorQueue = createArrowColorQueue();
+let ammoCount = STARTING_ARROWS;
+let highScore = 0;
+
+const world = createPhysicsWorld(settingsStore, {
+  onBalloonPop({ reward }) {
+    ammoCount += reward;
+    updateDebugDataset();
+  }
+});
 
 function resize() {
   resizeCanvas(canvas, ctx);
@@ -144,6 +156,26 @@ function updateImpactCamera(settings) {
   }, settings);
 }
 
+function updateHighScore() {
+  const climbScore = Math.max(0, Math.round((START_SCORE_Y - shotAnchor.y) / SCORE_WORLD_UNITS));
+  highScore = Math.max(highScore, climbScore);
+}
+
+function fireQueuedArrow({ x, y, angle, force }, settings) {
+  if (ammoCount <= 0) return false;
+  ammoCount -= 1;
+  fireArrow(world, {
+    x,
+    y,
+    angle,
+    force,
+    color: arrowColorQueue.current
+  });
+  arrowColorQueue = advanceArrowColorQueue(arrowColorQueue);
+  startShake(camera, settings.cameraShake);
+  return true;
+}
+
 function installDebugState() {
   if (!debugParams.has('debug') && !debugParams.has('autofire')) return;
   window.__ARROW_SANDBOX_DEBUG__ = {
@@ -156,6 +188,8 @@ function installDebugState() {
         lastImpactSerial: world.lastImpact?.serial || 0,
         camera: { x: camera.x, y: camera.y, zoom: camera.zoom },
         shotAnchor,
+        ammoCount,
+        highScore,
         aimActive: Boolean(aimState),
         arrowColors: { ...arrowColorQueue },
         bodies: bodies.map((body) => ({
@@ -179,20 +213,20 @@ function updateDebugDataset() {
   canvas.dataset.aimActive = String(Boolean(aimState));
   canvas.dataset.currentArrowColor = arrowColorQueue.current;
   canvas.dataset.nextArrowColor = arrowColorQueue.next;
+  canvas.dataset.ammoCount = String(ammoCount);
+  canvas.dataset.highScore = String(highScore);
 }
 
 function maybeRunAutofireProbe() {
   if (!debugParams.has('autofire')) return;
   const target = world.engine.world.bodies.find((body) => body.plugin?.entity?.material === 'wood');
   if (!target) return;
-  fireArrow(world, {
+  fireQueuedArrow({
     x: target.position.x - 180,
     y: target.position.y,
     angle: 0,
-    force: 1,
-    color: arrowColorQueue.current
-  });
-  startShake(camera, settingsStore.get().cameraShake);
+    force: 1
+  }, settingsStore.get());
   updateDebugDataset();
 }
 
@@ -202,6 +236,7 @@ function loop(now) {
   const settings = settingsStore.get();
   stepPhysics(world, dt * 1000);
   updateImpactCamera(settings);
+  updateHighScore();
   updateCamera(camera, dt);
   ensureGeneratedAhead(world, camera.y, settings);
   cleanupFarBelow(world, camera.y);
@@ -215,6 +250,10 @@ function loop(now) {
     settings,
     shotArea: { center: shotAnchor, radius: settings.shotRadius },
     arrowColors: arrowColorQueue,
+    hud: {
+      ammo: ammoCount,
+      highScore
+    },
     time: now
   });
   requestAnimationFrame(loop);
@@ -222,6 +261,12 @@ function loop(now) {
 
 window.addEventListener('resize', resize);
 settingsToggle.addEventListener('click', () => setSettingsOpen(!settingsPanel.classList.contains('is-open')));
+swapArrowButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  arrowColorQueue = swapArrowColorQueue(arrowColorQueue);
+  if (aimState) aimState = { ...aimState, arrowColor: arrowColorQueue.current };
+  updateDebugDataset();
+});
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') setSettingsOpen(false);
 });
@@ -243,7 +288,7 @@ createInputController({
   screenToWorld,
   canStartAim(point) {
     const settings = settingsStore.get();
-    return isPointInsideShotArea(point, { center: shotAnchor, radius: settings.shotRadius });
+    return ammoCount > 0 && isPointInsideShotArea(point, { center: shotAnchor, radius: settings.shotRadius });
   },
   onAimStart(center) {
     aimState = {
@@ -269,15 +314,12 @@ createInputController({
         intensity: settings.forceIntensity,
         launchSpeed: settings.launchSpeed
       });
-      fireArrow(world, {
+      fireQueuedArrow({
         x: finalAimState.center.x,
         y: finalAimState.center.y,
         angle: finalAimState.angle,
-        force,
-        color: arrowColorQueue.current
-      });
-      arrowColorQueue = advanceArrowColorQueue(arrowColorQueue);
-      startShake(camera, settings.cameraShake);
+        force
+      }, settings);
     }
     aimState = null;
   }

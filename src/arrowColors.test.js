@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARROW_COLORS, advanceArrowColorQueue, createArrowColorQueue, pickArrowColor } from './arrowColors.js';
+import { ARROW_COLORS, advanceArrowColorQueue, createArrowColorQueue, pickArrowColor, swapArrowColorQueue } from './arrowColors.js';
 
 describe('arrow color queue', () => {
   it('picks only supported arrow colors', () => {
@@ -35,5 +35,12 @@ describe('arrow color queue', () => {
 
     expect(queue).toEqual({ current: 'green', next: 'blue' });
     expect(advanced).toEqual({ current: 'blue', next: 'yellow' });
+  });
+
+  it('swaps current and next colors without rolling a new color', () => {
+    expect(swapArrowColorQueue({ current: 'blue', next: 'yellow' })).toEqual({
+      current: 'yellow',
+      next: 'blue'
+    });
   });
 });

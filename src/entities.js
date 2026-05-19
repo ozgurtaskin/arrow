@@ -19,13 +19,13 @@ export function createArrow({ x, y, angle, mass, color = 'green' }) {
   return attachEntity(body, { type: 'arrow', state: 'ready', length: 92, wobble: 0, color });
 }
 
-export function createBalloon({ x, y, radius, color, isStatic = true }) {
+export function createBalloon({ x, y, radius, color, isStatic = true, rewardArrows = 3 }) {
   return attachEntity(Matter.Bodies.circle(x, y, radius, {
     label: 'balloon',
     isStatic,
     isSensor: true,
     frictionAir: 0.01
-  }), { type: 'balloon', color, radius });
+  }), { type: 'balloon', color, radius, rewardArrows });
 }
 
 export function createBoxPiece({ x, y, width, height, material, isStatic = false, angle = 0, settings = {} }) {
