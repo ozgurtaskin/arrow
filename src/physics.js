@@ -37,6 +37,11 @@ function recordImpact(world, point, body) {
   };
 }
 
+function recordAnchorableImpact(world, point, body) {
+  if (entityOf(body)?.canAnchor === false) return;
+  recordImpact(world, point, body);
+}
+
 function addBurst(world, point, color) {
   for (let i = 0; i < 12; i += 1) {
     const angle = (Math.PI * 2 * i) / 12;
@@ -70,7 +75,7 @@ function stickArrow(world, arrow, target, point) {
     arrowEntity.stuckRelativeAngle = arrow.angle - target.angle;
     Matter.Body.setStatic(arrow, true);
   }
-  recordImpact(world, point, arrow);
+  recordAnchorableImpact(world, point, arrow);
 }
 
 function bounceArrow(world, arrow, target, pair, settings) {
@@ -82,15 +87,16 @@ function bounceArrow(world, arrow, target, pair, settings) {
   Matter.Body.setVelocity(arrow, velocity);
   Matter.Body.setAngularVelocity(arrow, 0);
   const targetEntity = entityOf(target);
+  if (targetEntity?.type === 'ruleWood') arrowEntity.canAnchor = false;
   if (targetEntity) targetEntity.wobble = 1;
-  recordImpact(world, point, arrow);
+  recordAnchorableImpact(world, point, arrow);
 }
 
 function popBalloon(world, arrow, balloon, point) {
   const balloonEntity = entityOf(balloon);
   addBurst(world, point, balloonEntity?.color || '#f25565');
   removeBody(world, balloon);
-  recordImpact(world, point, arrow);
+  recordAnchorableImpact(world, point, arrow);
 }
 
 function handleArrowCollision(world, pair) {
@@ -101,11 +107,12 @@ function handleArrowCollision(world, pair) {
   if (!arrowEntity || arrowEntity.state !== 'flying') return;
 
   const point = impactPoint(pair, arrow);
-  const action = classifyArrowCollision(arrow, target, { point });
+  const targetEntity = entityOf(target);
+  const action = classifyArrowCollision(arrow, target, { point, useSurfacePoint: targetEntity?.type === 'ruleWood' });
   if (action === 'pop') popBalloon(world, arrow, target, point);
   if (action === 'stick') stickArrow(world, arrow, target, point);
   if (action === 'bounce') bounceArrow(world, arrow, target, pair, world.settings);
-  if (action === 'deflect') recordImpact(world, point, arrow);
+  if (action === 'deflect') recordAnchorableImpact(world, point, arrow);
 }
 
 export function createPhysicsWorld(settingsStore) {
@@ -178,7 +185,7 @@ export function stepPhysics(world, deltaMs) {
     if (speed > 0.35) Matter.Body.setAngle(body, Math.atan2(body.velocity.y, body.velocity.x));
     if (entity.ageMs > SETTLE_AGE_MS && speed < SETTLE_SPEED) {
       entity.state = 'settled';
-      recordImpact(world, { x: body.position.x, y: body.position.y }, body);
+      recordAnchorableImpact(world, { x: body.position.x, y: body.position.y }, body);
     }
   }
 }

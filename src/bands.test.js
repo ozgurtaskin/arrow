@@ -5,7 +5,8 @@ import {
   findRuleWoodHit,
   generateBandSegments,
   getCircleLoopT,
-  getRectangleLoopT
+  getRectangleLoopT,
+  projectRuleWoodSurfacePoint
 } from './bands.js';
 
 describe('generateBandSegments', () => {
@@ -56,6 +57,24 @@ describe('loop position helpers', () => {
     expect(getRectangleLoopT({ x: 50, y: -20 }, 100, 40)).toBeCloseTo(100 / 280);
     expect(getRectangleLoopT({ x: 50, y: 20 }, 100, 40)).toBeCloseTo(140 / 280);
     expect(getRectangleLoopT({ x: -50, y: 20 }, 100, 40)).toBeCloseTo(240 / 280);
+  });
+});
+
+describe('projectRuleWoodSurfacePoint', () => {
+  it('projects circle hits onto the outer radius', () => {
+    expect(projectRuleWoodSurfacePoint({ shape: 'circle', radius: 50 }, { x: -30, y: 0 })).toEqual({ x: -50, y: 0 });
+    expect(projectRuleWoodSurfacePoint({ shape: 'circle', radius: 50 }, { x: 0, y: 0 })).toEqual({ x: 50, y: 0 });
+  });
+
+  it('projects box hits onto the nearest original edge', () => {
+    expect(projectRuleWoodSurfacePoint({ shape: 'box', width: 100, height: 40 }, { x: 45, y: 3 })).toEqual({
+      x: 50,
+      y: 3
+    });
+    expect(projectRuleWoodSurfacePoint({ shape: 'box', width: 100, height: 40 }, { x: -80, y: 12 })).toEqual({
+      x: -50,
+      y: 12
+    });
   });
 });
 

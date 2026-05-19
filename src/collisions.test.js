@@ -54,6 +54,11 @@ describe('rule wood collision classification', () => {
     expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: 30, y: 0 } })).toBe('stick');
     expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: 0, y: 0 } })).toBe('stick');
   });
+
+  it('can classify penetrated rule wood hits from the outer surface', () => {
+    expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: -30, y: 0 } })).toBe('stick');
+    expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: -30, y: 0 }, useSurfacePoint: true })).toBe('bounce');
+  });
 });
 
 describe('reflectVelocity', () => {

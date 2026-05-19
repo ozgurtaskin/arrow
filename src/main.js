@@ -112,6 +112,7 @@ function buildSettingsPanel() {
 
 function shouldMoveCameraToImpact(impact) {
   const entity = impact.body?.plugin?.entity;
+  if (entity?.canAnchor === false) return false;
   return !entity || entity.state !== 'flying';
 }
 

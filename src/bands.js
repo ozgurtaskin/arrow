@@ -85,6 +85,34 @@ export function getRectangleLoopT(localPoint, width, height) {
   return normalizeLoopT((width + height + width + (halfHeight - y)) / perimeter);
 }
 
+export function projectRuleWoodSurfacePoint(entity, localPoint) {
+  if (entity.shape === 'circle') {
+    const length = Math.hypot(localPoint.x, localPoint.y);
+    if (length === 0) return { x: entity.radius, y: 0 };
+    return {
+      x: (localPoint.x / length) * entity.radius,
+      y: (localPoint.y / length) * entity.radius
+    };
+  }
+
+  const halfWidth = entity.width / 2;
+  const halfHeight = entity.height / 2;
+  const x = Math.max(-halfWidth, Math.min(halfWidth, localPoint.x));
+  const y = Math.max(-halfHeight, Math.min(halfHeight, localPoint.y));
+  const distances = [
+    { edge: 'top', value: Math.abs(y + halfHeight) },
+    { edge: 'right', value: Math.abs(x - halfWidth) },
+    { edge: 'bottom', value: Math.abs(y - halfHeight) },
+    { edge: 'left', value: Math.abs(x + halfWidth) }
+  ];
+  const nearest = distances.reduce((best, item) => (item.value < best.value ? item : best), distances[0]).edge;
+
+  if (nearest === 'top') return { x, y: -halfHeight };
+  if (nearest === 'right') return { x: halfWidth, y };
+  if (nearest === 'bottom') return { x, y: halfHeight };
+  return { x: -halfWidth, y };
+}
+
 function findSegment(segments, loopT) {
   const t = normalizeLoopT(loopT);
   return segments.find((segment) => t >= segment.start && t < segment.end) || segments.at(-1);
