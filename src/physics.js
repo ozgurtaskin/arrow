@@ -1,6 +1,15 @@
 import Matter from 'matter-js';
 import { classifyArrowCollision, collisionNormalFromPair, getArrowPair, reflectVelocity } from './collisions.js';
-import { createArrow, createBalloon, createBoxPiece, createCirclePiece, createGround, createHingedPlank } from './entities.js';
+import {
+  createArrow,
+  createBalloon,
+  createBoxPiece,
+  createCirclePiece,
+  createGround,
+  createHingedPlank,
+  createRuleWoodBox,
+  createRuleWoodCircle
+} from './entities.js';
 import { getStuckArrowPose, worldToLocal } from './geometry.js';
 import { createGenerator, nextCluster } from './generator.js';
 import { getMaterialConfig } from './materials.js';
@@ -209,6 +218,12 @@ function spawnCluster(world, cluster, settings) {
   for (const item of cluster.items) {
     if (item.kind === 'balloon') {
       addBody(world, createBalloon({ x: item.x, y: item.y, radius: 28, color: item.color }));
+    }
+    if (item.kind === 'ruleWood' && item.shape === 'box') {
+      addBody(world, createRuleWoodBox({ ...item, settings }));
+    }
+    if (item.kind === 'ruleWood' && item.shape === 'circle') {
+      addBody(world, createRuleWoodCircle({ ...item, settings }));
     }
     if (item.kind === 'piece' && item.shape === 'box') {
       addBody(world, createBoxPiece({ ...item, settings }));

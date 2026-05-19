@@ -9,6 +9,7 @@ describe('generator', () => {
     expect(cluster.items.length).toBeGreaterThanOrEqual(3);
     expect(cluster.items.some((item) => item.kind === 'balloon')).toBe(true);
     expect(cluster.items.some((item) => item.kind === 'piece' && item.isStatic && item.shape === 'box')).toBe(true);
+    expect(cluster.items.filter((item) => item.kind === 'ruleWood').length).toBeGreaterThanOrEqual(2);
   });
 
   it('continues upward after each cluster', () => {

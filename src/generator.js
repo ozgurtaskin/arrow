@@ -30,15 +30,14 @@ export function nextCluster(generator) {
     items: [
       { kind: 'balloon', x: centerX + 92, y: y - 120, color: balloonColor },
       {
-        kind: 'piece',
-        material: 'wood',
+        kind: 'ruleWood',
         shape: 'box',
         x: centerX - 105,
         y,
         width: 230,
-        height: 30,
+        height: 72,
         angle: (random() - 0.5) * 0.5,
-        isStatic: true
+        seed: generator.index * 100 + 1
       },
       {
         kind: 'piece',
@@ -52,15 +51,15 @@ export function nextCluster(generator) {
         isStatic: true
       },
       {
-        kind: 'piece',
-        material: 'wood',
-        shape: 'box',
-        x: centerX + (random() - 0.5) * 340,
+        kind: 'ruleWood',
+        shape: random() > 0.45 ? 'circle' : 'box',
+        x: centerX + (random() - 0.5) * 420,
         y: y + 245,
-        width: 120 + random() * 100,
-        height: 26,
+        width: 132 + random() * 80,
+        height: 74 + random() * 24,
+        radius: 48 + random() * 14,
         angle: (random() - 0.5) * 0.65,
-        isStatic: random() > 0.35
+        seed: generator.index * 100 + 2
       },
       random() > 0.5
         ? { kind: 'hinged-plank', x: centerX - 175, y: y + 205, length: 170, angle: (random() - 0.5) * 0.7 }
