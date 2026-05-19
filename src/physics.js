@@ -92,7 +92,7 @@ function handleArrowCollision(world, pair) {
   if (!arrowEntity || arrowEntity.state !== 'flying') return;
 
   const point = impactPoint(pair, arrow);
-  const action = classifyArrowCollision(arrow, target);
+  const action = classifyArrowCollision(arrow, target, { point });
   if (action === 'pop') popBalloon(world, arrow, target, point);
   if (action === 'stick') stickArrow(world, arrow, target, point);
   if (action === 'bounce') bounceArrow(world, arrow, target, pair, world.settings);
