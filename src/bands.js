@@ -46,7 +46,7 @@ export function generateBandSegments({ seed = 1, minPercent = 0.15, segmentCount
   });
 }
 
-export function createRuleWoodBands({ seed = 1, outerThickness = 18, rainbowThickness = 14, segmentCount = 4 } = {}) {
+export function createRuleWoodBands({ seed = 1, outerThickness = 8, rainbowThickness = 6, segmentCount = 4 } = {}) {
   return {
     seed,
     layers: [

@@ -44,6 +44,15 @@ describe('generateBandSegments', () => {
   });
 });
 
+describe('createRuleWoodBands', () => {
+  it('uses thin rubber-strip defaults for visual bands', () => {
+    const bands = createRuleWoodBands({ seed: 3 });
+
+    expect(bands.layers[0].thickness).toBe(8);
+    expect(bands.layers[1].thickness).toBe(6);
+  });
+});
+
 describe('loop position helpers', () => {
   it('maps circle angle into a normalized loop', () => {
     expect(getCircleLoopT({ x: 1, y: 0 })).toBeCloseTo(0);
