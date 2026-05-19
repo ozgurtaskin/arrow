@@ -270,27 +270,28 @@ function drawRectRuleWood(ctx, entity, time = 0) {
   const outerInset = outer.thickness / 2;
   const rainbowInset = outer.thickness + rainbow.thickness / 2;
   const coreInset = outer.thickness + rainbow.thickness;
-  const perimeter = 2 * (entity.width + entity.height);
+  const loopWidth = Math.max(1, entity.width);
+  const loopHeight = Math.max(1, entity.height);
+  const halfWidth = loopWidth / 2;
+  const halfHeight = loopHeight / 2;
+  const perimeter = 2 * (loopWidth + loopHeight);
 
-  function pointAt(t, inset) {
-    const width = Math.max(1, entity.width - inset * 2);
-    const height = Math.max(1, entity.height - inset * 2);
-    const insetPerimeter = 2 * (width + height);
-    let distance = t * insetPerimeter;
-    if (distance <= width) return { x: -width / 2 + distance, y: -height / 2 };
-    distance -= width;
-    if (distance <= height) return { x: width / 2, y: -height / 2 + distance };
-    distance -= height;
-    if (distance <= width) return { x: width / 2 - distance, y: height / 2 };
-    distance -= width;
-    return { x: -width / 2, y: height / 2 - distance };
+  function pointAtOriginalLoop(t, inset) {
+    let distance = (((t % 1) + 1) % 1) * perimeter;
+    if (distance <= loopWidth) return { x: -halfWidth + distance, y: -halfHeight + inset };
+    distance -= loopWidth;
+    if (distance <= loopHeight) return { x: halfWidth - inset, y: -halfHeight + distance };
+    distance -= loopHeight;
+    if (distance <= loopWidth) return { x: halfWidth - distance, y: halfHeight - inset };
+    distance -= loopWidth;
+    return { x: -halfWidth + inset, y: halfHeight - distance };
   }
 
   function strokeSegment(startT, endT, inset) {
     const samples = Math.max(2, Math.ceil((endT - startT) * perimeter / 18));
     ctx.beginPath();
     for (let index = 0; index <= samples; index += 1) {
-      const point = pointAt(startT + ((endT - startT) * index) / samples, inset);
+      const point = pointAtOriginalLoop(startT + ((endT - startT) * index) / samples, inset);
       if (index === 0) ctx.moveTo(point.x, point.y);
       else ctx.lineTo(point.x, point.y);
     }
