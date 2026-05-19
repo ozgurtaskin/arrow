@@ -76,6 +76,17 @@ describe('projectRuleWoodSurfacePoint', () => {
       y: 12
     });
   });
+
+  it('projects box hits back along the entry direction when available', () => {
+    expect(projectRuleWoodSurfacePoint(
+      { shape: 'box', width: 100, height: 40 },
+      { x: -30, y: 0 },
+      { x: 1, y: 0 }
+    )).toEqual({
+      x: -50,
+      y: 0
+    });
+  });
 });
 
 describe('findRuleWoodHit', () => {

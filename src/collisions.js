@@ -1,5 +1,5 @@
 import { findRuleWoodHit, projectRuleWoodSurfacePoint } from './bands.js';
-import { worldToLocal } from './geometry.js';
+import { rotatePoint, worldToLocal } from './geometry.js';
 
 export function getEntity(body) {
   return body?.plugin?.entity || {};
@@ -9,14 +9,15 @@ export function isArrowBody(body) {
   return getEntity(body).type === 'arrow';
 }
 
-export function classifyArrowCollision(arrowBody, targetBody, { point, useSurfacePoint = false } = {}) {
+export function classifyArrowCollision(arrowBody, targetBody, { point, direction, useSurfacePoint = false } = {}) {
   const arrow = getEntity(arrowBody);
   const target = getEntity(targetBody);
   if (arrow.type !== 'arrow') return 'ignore';
   if (target.type === 'balloon') return 'pop';
   if (target.type === 'ruleWood') {
     const localPoint = point ? worldToLocal(targetBody, point) : { x: 0, y: 0 };
-    const hitPoint = useSurfacePoint ? projectRuleWoodSurfacePoint(target, localPoint) : localPoint;
+    const localDirection = direction ? rotatePoint(direction, -(targetBody.angle || 0)) : null;
+    const hitPoint = useSurfacePoint ? projectRuleWoodSurfacePoint(target, localPoint, localDirection) : localPoint;
     const hit = findRuleWoodHit(target, hitPoint);
     if (hit.color === 'rainbow' || hit.color === 'wood' || hit.color === arrow.color) return 'stick';
     return 'bounce';

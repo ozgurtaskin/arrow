@@ -26,6 +26,8 @@ describe('rule wood physics collisions', () => {
     addBody(world, blueRuleWoodCircle());
 
     const arrow = fireArrow(world, { x: -150, y: 0, angle: 0, force: 1, color: 'green' });
+    const serialBeforeCollision = world.lastImpact?.serial || 0;
+    const impactSerialBeforeCollision = world.impactSerial;
 
     for (let index = 0; index < 80 && arrow.plugin.entity.state === 'flying' && arrow.plugin.entity.canAnchor !== false; index += 1) {
       stepPhysics(world, 1000 / 60);
@@ -33,6 +35,8 @@ describe('rule wood physics collisions', () => {
 
     expect(arrow.plugin.entity.state).not.toBe('stuck');
     expect(arrow.plugin.entity.canAnchor).toBe(false);
+    expect(world.lastImpact?.serial || 0).toBe(serialBeforeCollision);
+    expect(world.impactSerial).toBe(impactSerialBeforeCollision);
 
     const serialAfterBounce = world.lastImpact?.serial || 0;
     Matter.Body.setVelocity(arrow, { x: 0, y: 0 });

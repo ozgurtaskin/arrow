@@ -108,7 +108,11 @@ function handleArrowCollision(world, pair) {
 
   const point = impactPoint(pair, arrow);
   const targetEntity = entityOf(target);
-  const action = classifyArrowCollision(arrow, target, { point, useSurfacePoint: targetEntity?.type === 'ruleWood' });
+  const action = classifyArrowCollision(arrow, target, {
+    point,
+    direction: arrow.velocity,
+    useSurfacePoint: targetEntity?.type === 'ruleWood'
+  });
   if (action === 'pop') popBalloon(world, arrow, target, point);
   if (action === 'stick') stickArrow(world, arrow, target, point);
   if (action === 'bounce') bounceArrow(world, arrow, target, pair, world.settings);

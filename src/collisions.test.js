@@ -32,6 +32,36 @@ function ruleWoodTarget() {
   };
 }
 
+function ruleWoodBoxTarget() {
+  return {
+    position: { x: 0, y: 0 },
+    angle: 0,
+    plugin: {
+      entity: {
+        type: 'ruleWood',
+        material: 'wood',
+        shape: 'box',
+        width: 100,
+        height: 40,
+        bands: {
+          layers: [
+            {
+              kind: 'segmented',
+              name: 'outer',
+              thickness: 12,
+              segments: [
+                { color: 'green', start: 0, end: 240 / 280, size: 240 / 280 },
+                { color: 'blue', start: 240 / 280, end: 1, size: 40 / 280 }
+              ]
+            },
+            { kind: 'rainbow', name: 'rainbow', thickness: 10, segments: [{ color: 'rainbow', start: 0, end: 1, size: 1 }] }
+          ]
+        }
+      }
+    }
+  };
+}
+
 describe('classifyArrowCollision', () => {
   it('routes arrow impacts by target material or type', () => {
     expect(classifyArrowCollision(arrow, { plugin: { entity: { type: 'piece', material: 'wood' } } })).toBe('stick');
@@ -58,6 +88,14 @@ describe('rule wood collision classification', () => {
   it('can classify penetrated rule wood hits from the outer surface', () => {
     expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: -30, y: 0 } })).toBe('stick');
     expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: -30, y: 0 }, useSurfacePoint: true })).toBe('bounce');
+  });
+
+  it('uses entry direction to classify penetrated box hits from the entry surface', () => {
+    expect(classifyArrowCollision(arrow, ruleWoodBoxTarget(), {
+      point: { x: -30, y: 0 },
+      direction: { x: 1, y: 0 },
+      useSurfacePoint: true
+    })).toBe('bounce');
   });
 });
 

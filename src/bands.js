@@ -1,5 +1,6 @@
 export const BAND_COLORS = Object.freeze(['green', 'yellow', 'blue']);
 export const RAINBOW_COLOR = 'rainbow';
+const SURFACE_EPSILON = 1e-9;
 
 function createSeededRandom(seed) {
   return function random() {
@@ -12,6 +13,10 @@ function createSeededRandom(seed) {
 
 function normalizeLoopT(value) {
   return ((value % 1) + 1) % 1;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function chooseColor(random, previousColor) {
@@ -85,7 +90,50 @@ export function getRectangleLoopT(localPoint, width, height) {
   return normalizeLoopT((width + height + width + (halfHeight - y)) / perimeter);
 }
 
-export function projectRuleWoodSurfacePoint(entity, localPoint) {
+function projectBoxPointAlongDirection(localPoint, localDirection, halfWidth, halfHeight) {
+  if (!localDirection || Math.hypot(localDirection.x, localDirection.y) === 0) return null;
+
+  const candidates = [];
+  if (localDirection.x !== 0) {
+    candidates.push({
+      t: (localPoint.x + halfWidth) / localDirection.x,
+      point: (t) => ({ x: -halfWidth, y: localPoint.y - localDirection.y * t })
+    });
+    candidates.push({
+      t: (localPoint.x - halfWidth) / localDirection.x,
+      point: (t) => ({ x: halfWidth, y: localPoint.y - localDirection.y * t })
+    });
+  }
+  if (localDirection.y !== 0) {
+    candidates.push({
+      t: (localPoint.y + halfHeight) / localDirection.y,
+      point: (t) => ({ x: localPoint.x - localDirection.x * t, y: -halfHeight })
+    });
+    candidates.push({
+      t: (localPoint.y - halfHeight) / localDirection.y,
+      point: (t) => ({ x: localPoint.x - localDirection.x * t, y: halfHeight })
+    });
+  }
+
+  const intersections = candidates
+    .filter((candidate) => candidate.t >= 0)
+    .sort((a, b) => a.t - b.t)
+    .map((candidate) => candidate.point(candidate.t))
+    .filter((point) => (
+      point.x >= -halfWidth - SURFACE_EPSILON &&
+      point.x <= halfWidth + SURFACE_EPSILON &&
+      point.y >= -halfHeight - SURFACE_EPSILON &&
+      point.y <= halfHeight + SURFACE_EPSILON
+    ))
+    .map((point) => ({
+      x: clamp(point.x, -halfWidth, halfWidth),
+      y: clamp(point.y, -halfHeight, halfHeight)
+    }));
+
+  return intersections[0] || null;
+}
+
+export function projectRuleWoodSurfacePoint(entity, localPoint, localDirection) {
   if (entity.shape === 'circle') {
     const length = Math.hypot(localPoint.x, localPoint.y);
     if (length === 0) return { x: entity.radius, y: 0 };
@@ -97,6 +145,9 @@ export function projectRuleWoodSurfacePoint(entity, localPoint) {
 
   const halfWidth = entity.width / 2;
   const halfHeight = entity.height / 2;
+  const directedPoint = projectBoxPointAlongDirection(localPoint, localDirection, halfWidth, halfHeight);
+  if (directedPoint) return directedPoint;
+
   const x = Math.max(-halfWidth, Math.min(halfWidth, localPoint.x));
   const y = Math.max(-halfHeight, Math.min(halfHeight, localPoint.y));
   const distances = [
