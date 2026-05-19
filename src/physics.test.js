@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import Matter from 'matter-js';
 import { addBody, createPhysicsWorld, fireArrow, stepPhysics } from './physics.js';
-import { createRuleWoodCircle } from './entities.js';
+import { createBoxPiece, createRuleWoodCircle } from './entities.js';
 import { createSettingsStore } from './settings.js';
 
 function blueRuleWoodCircle() {
@@ -45,5 +45,31 @@ describe('rule wood physics collisions', () => {
 
     expect(arrow.plugin.entity.state).toBe('settled');
     expect(world.lastImpact?.serial || 0).toBe(serialAfterBounce);
+  });
+
+  it('starts and decays a short stuck-arrow wobble timer', () => {
+    const world = createPhysicsWorld(createSettingsStore({ gravity: 0 }));
+    addBody(world, createBoxPiece({
+      x: 0,
+      y: 0,
+      width: 80,
+      height: 80,
+      material: 'wood',
+      isStatic: true,
+      settings: { woodMass: 1 }
+    }));
+
+    const arrow = fireArrow(world, { x: -150, y: 0, angle: 0, force: 1, color: 'green' });
+
+    for (let index = 0; index < 80 && arrow.plugin.entity.state !== 'stuck'; index += 1) {
+      stepPhysics(world, 1000 / 60);
+    }
+
+    expect(arrow.plugin.entity.state).toBe('stuck');
+    expect(arrow.plugin.entity.stickWobble).toBeGreaterThan(0);
+
+    stepPhysics(world, 220);
+
+    expect(arrow.plugin.entity.stickWobble).toBe(0);
   });
 });

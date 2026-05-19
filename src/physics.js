@@ -17,6 +17,7 @@ import { getMaterialConfig } from './materials.js';
 const ARROW_SPEED = 42;
 const SETTLE_SPEED = 0.42;
 const SETTLE_AGE_MS = 800;
+const STICK_WOBBLE_MS = 160;
 
 function entityOf(body) {
   return body?.plugin?.entity;
@@ -62,6 +63,7 @@ function stickArrow(world, arrow, target, point) {
   if (!arrowEntity || arrowEntity.state !== 'flying') return;
 
   arrowEntity.state = 'stuck';
+  arrowEntity.stickWobble = STICK_WOBBLE_MS;
   arrowEntity.stuckTo = target.id;
   Matter.Body.setVelocity(arrow, { x: 0, y: 0 });
   Matter.Body.setAngularVelocity(arrow, 0);
@@ -177,6 +179,7 @@ export function stepPhysics(world, deltaMs) {
     const entity = entityOf(body);
     if (!entity) continue;
     if (entity.wobble) entity.wobble = Math.max(0, entity.wobble - deltaMs / 260);
+    if (entity.stickWobble) entity.stickWobble = Math.max(0, entity.stickWobble - deltaMs);
     if (entity.type === 'arrow' && entity.state === 'stuck' && entity.stuckToBody) {
       const pose = getStuckArrowPose(entity.stuckToBody, entity);
       Matter.Body.setPosition(body, pose.position);
