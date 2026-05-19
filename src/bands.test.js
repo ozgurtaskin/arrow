@@ -21,6 +21,17 @@ describe('generateBandSegments', () => {
     expect(first.every((segment) => BAND_COLORS.includes(segment.color))).toBe(true);
   });
 
+  it('can limit a shape palette while keeping segments at least ten percent', () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const segments = generateBandSegments({ seed, minPercent: 0.1, segmentCount: 7, colorCount: 2 });
+      const uniqueColors = new Set(segments.map((segment) => segment.color));
+
+      expect(uniqueColors.size).toBeLessThanOrEqual(2);
+      expect(segments.every((segment) => segment.size >= 0.1)).toBe(true);
+      expect(segments.reduce((sum, segment) => sum + segment.size, 0)).toBeCloseTo(1);
+    }
+  });
+
   it('stores start and end positions for direct segment lookup', () => {
     const segments = generateBandSegments({ seed: 5, minPercent: 0.15, segmentCount: 5 });
     expect(segments[0].start).toBe(0);
@@ -45,11 +56,13 @@ describe('generateBandSegments', () => {
 });
 
 describe('createRuleWoodBands', () => {
-  it('uses thin rubber-strip defaults for visual bands', () => {
+  it('uses a single thin rubber-strip frame by default', () => {
     const bands = createRuleWoodBands({ seed: 3 });
 
+    expect(bands.layers).toHaveLength(1);
     expect(bands.layers[0].thickness).toBe(8);
-    expect(bands.layers[1].thickness).toBe(6);
+    expect(bands.layers[0].segments.every((segment) => segment.size >= 0.1)).toBe(true);
+    expect(new Set(bands.layers[0].segments.map((segment) => segment.color)).size).toBeLessThanOrEqual(3);
   });
 });
 
@@ -109,8 +122,7 @@ describe('findRuleWoodHit', () => {
             { color: 'green', start: 0, end: 0.5, size: 0.5 },
             { color: 'blue', start: 0.5, end: 1, size: 0.5 }
           ]
-        },
-        { kind: 'rainbow', thickness: 10, segments: [{ color: 'rainbow', start: 0, end: 1, size: 1 }] }
+        }
       ]
     };
 
@@ -130,8 +142,7 @@ describe('findRuleWoodHit', () => {
             { color: 'green', start: 0, end: 0.5, size: 0.5 },
             { color: 'blue', start: 0.5, end: 1, size: 0.5 }
           ]
-        },
-        { kind: 'rainbow', thickness: 10, segments: [{ color: 'rainbow', start: 0, end: 1, size: 1 }] }
+        }
       ]
     };
 
@@ -141,16 +152,8 @@ describe('findRuleWoodHit', () => {
     });
   });
 
-  it('returns rainbow for the wildcard inner band', () => {
-    const bands = createRuleWoodBands({ seed: 2, outerThickness: 12, rainbowThickness: 10 });
-    expect(findRuleWoodHit({ shape: 'circle', radius: 50, bands }, { x: 30, y: 0 })).toEqual({
-      layer: 'rainbow',
-      color: 'rainbow'
-    });
-  });
-
   it('returns core for the center wood area', () => {
-    const bands = createRuleWoodBands({ seed: 2, outerThickness: 12, rainbowThickness: 10 });
+    const bands = createRuleWoodBands({ seed: 2, outerThickness: 12 });
     expect(findRuleWoodHit({ shape: 'box', width: 120, height: 80, bands }, { x: 0, y: 0 })).toEqual({
       layer: 'core',
       color: 'wood'

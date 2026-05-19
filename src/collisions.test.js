@@ -23,8 +23,7 @@ function ruleWoodTarget() {
                 { color: 'green', start: 0, end: 0.5, size: 0.5 },
                 { color: 'blue', start: 0.5, end: 1, size: 0.5 }
               ]
-            },
-            { kind: 'rainbow', name: 'rainbow', thickness: 10, segments: [{ color: 'rainbow', start: 0, end: 1, size: 1 }] }
+            }
           ]
         }
       }
@@ -53,8 +52,7 @@ function ruleWoodBoxTarget() {
                 { color: 'green', start: 0, end: 240 / 280, size: 240 / 280 },
                 { color: 'blue', start: 240 / 280, end: 1, size: 40 / 280 }
               ]
-            },
-            { kind: 'rainbow', name: 'rainbow', thickness: 10, segments: [{ color: 'rainbow', start: 0, end: 1, size: 1 }] }
+            }
           ]
         }
       }
@@ -80,8 +78,7 @@ describe('rule wood collision classification', () => {
     expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: -49, y: 0 } })).toBe('bounce');
   });
 
-  it('sticks any arrow color into rainbow and core zones', () => {
-    expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: 30, y: 0 } })).toBe('stick');
+  it('sticks any arrow color into the wood core', () => {
     expect(classifyArrowCollision(arrow, ruleWoodTarget(), { point: { x: 0, y: 0 } })).toBe('stick');
   });
 

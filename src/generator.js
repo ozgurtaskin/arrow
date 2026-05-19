@@ -11,6 +11,21 @@ function pick(random, values) {
   return values[Math.floor(random() * values.length)];
 }
 
+function createRuleWoodBandDesign(random) {
+  const colorCount = 1 + Math.floor(random() * 3);
+  return {
+    colorCount,
+    segmentCount: colorCount === 1 ? 1 : colorCount + Math.floor(random() * (6 - colorCount))
+  };
+}
+
+function createRuleWoodItem(random, base) {
+  return {
+    ...base,
+    ...createRuleWoodBandDesign(random)
+  };
+}
+
 export function createGenerator({ seed = 1, startY = 0 } = {}) {
   return { random: mulberry32(seed), nextY: startY - 520, index: 0 };
 }
@@ -29,7 +44,7 @@ export function nextCluster(generator) {
     y,
     items: [
       { kind: 'balloon', x: centerX + 92, y: y - 120, color: balloonColor },
-      {
+      createRuleWoodItem(random, {
         kind: 'ruleWood',
         shape: 'box',
         x: centerX - 105,
@@ -38,7 +53,7 @@ export function nextCluster(generator) {
         height: 72,
         angle: (random() - 0.5) * 0.5,
         seed: generator.index * 100 + 1
-      },
+      }),
       {
         kind: 'piece',
         material: 'rubber',
@@ -50,7 +65,7 @@ export function nextCluster(generator) {
         angle: (random() - 0.5) * 0.8,
         isStatic: true
       },
-      {
+      createRuleWoodItem(random, {
         kind: 'ruleWood',
         shape: random() > 0.45 ? 'circle' : 'box',
         x: centerX + (random() - 0.5) * 420,
@@ -60,7 +75,7 @@ export function nextCluster(generator) {
         radius: 48 + random() * 14,
         angle: (random() - 0.5) * 0.65,
         seed: generator.index * 100 + 2
-      },
+      }),
       random() > 0.5
         ? { kind: 'hinged-plank', x: centerX - 175, y: y + 205, length: 170, angle: (random() - 0.5) * 0.7 }
         : {

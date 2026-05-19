@@ -1,5 +1,4 @@
 export const BAND_COLORS = Object.freeze(['green', 'yellow', 'blue']);
-export const RAINBOW_COLOR = 'rainbow';
 const SURFACE_EPSILON = 1e-9;
 
 function createSeededRandom(seed) {
@@ -24,20 +23,38 @@ function chooseColor(random, previousColor) {
   return choices[Math.floor(random() * choices.length)] || BAND_COLORS[0];
 }
 
-export function generateBandSegments({ seed = 1, minPercent = 0.15, segmentCount = 4 } = {}) {
-  const requestedCount = Number.isFinite(segmentCount) ? Math.floor(segmentCount) : 1;
-  const count = Math.max(1, Math.min(requestedCount, Math.floor(1 / minPercent)));
+function choosePalette(random, colorCount) {
+  const requestedCount = Number.isFinite(colorCount)
+    ? Math.floor(colorCount)
+    : 1 + Math.floor(random() * BAND_COLORS.length);
+  const count = Math.max(1, Math.min(BAND_COLORS.length, requestedCount));
+  const colors = [...BAND_COLORS];
+  for (let index = colors.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [colors[index], colors[swapIndex]] = [colors[swapIndex], colors[index]];
+  }
+  return colors.slice(0, count);
+}
+
+export function generateBandSegments({ seed = 1, minPercent = 0.1, segmentCount, colorCount } = {}) {
   const random = createSeededRandom(seed);
+  const palette = choosePalette(random, colorCount);
+  const defaultSegmentCount = palette.length === 1 ? 1 : palette.length + Math.floor(random() * 3);
+  const requestedCount = Number.isFinite(segmentCount) ? Math.floor(segmentCount) : defaultSegmentCount;
+  const count = Math.max(1, Math.min(requestedCount, Math.floor(1 / minPercent)));
   const freeSpace = Math.max(0, 1 - count * minPercent);
   const weights = Array.from({ length: count }, () => 0.2 + random());
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
   let cursor = 0;
   let previousColor = null;
+  const colorOffset = Math.floor(random() * palette.length);
 
   return weights.map((weight, index) => {
     const isLast = index === count - 1;
     const size = isLast ? 1 - cursor : minPercent + (freeSpace * weight) / totalWeight;
-    const color = chooseColor(random, previousColor);
+    const color = palette.length === BAND_COLORS.length
+      ? chooseColor(random, previousColor)
+      : palette[(index + colorOffset) % palette.length];
     const start = cursor;
     const end = isLast ? 1 : cursor + size;
     previousColor = color;
@@ -46,7 +63,7 @@ export function generateBandSegments({ seed = 1, minPercent = 0.15, segmentCount
   });
 }
 
-export function createRuleWoodBands({ seed = 1, outerThickness = 8, rainbowThickness = 6, segmentCount = 4 } = {}) {
+export function createRuleWoodBands({ seed = 1, outerThickness = 8, segmentCount, colorCount } = {}) {
   return {
     seed,
     layers: [
@@ -54,13 +71,7 @@ export function createRuleWoodBands({ seed = 1, outerThickness = 8, rainbowThick
         kind: 'segmented',
         name: 'outer',
         thickness: outerThickness,
-        segments: generateBandSegments({ seed, minPercent: 0.15, segmentCount })
-      },
-      {
-        kind: 'rainbow',
-        name: 'rainbow',
-        thickness: rainbowThickness,
-        segments: [{ color: RAINBOW_COLOR, start: 0, end: 1, size: 1 }]
+        segments: generateBandSegments({ seed, minPercent: 0.1, segmentCount, colorCount })
       }
     ]
   };
@@ -190,7 +201,6 @@ export function findRuleWoodHit(entity, localPoint) {
   for (const layer of bands.layers) {
     accumulated += layer.thickness;
     if (depth <= accumulated) {
-      if (layer.kind === 'rainbow') return { layer: 'rainbow', color: RAINBOW_COLOR };
       const segment = findSegment(layer.segments, loopTForEntity(entity, localPoint));
       return { layer: 'outer', color: segment.color };
     }

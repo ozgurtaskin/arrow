@@ -12,6 +12,20 @@ describe('generator', () => {
     expect(cluster.items.filter((item) => item.kind === 'ruleWood').length).toBeGreaterThanOrEqual(2);
   });
 
+  it('assigns constrained color designs to generated rule wood shapes', () => {
+    const generator = createGenerator({ seed: 42, startY: 0 });
+    const cluster = nextCluster(generator);
+    const ruleWoods = cluster.items.filter((item) => item.kind === 'ruleWood');
+
+    expect(ruleWoods.length).toBeGreaterThan(0);
+    for (const item of ruleWoods) {
+      expect(item.colorCount).toBeGreaterThanOrEqual(1);
+      expect(item.colorCount).toBeLessThanOrEqual(3);
+      expect(item.segmentCount).toBeGreaterThanOrEqual(item.colorCount);
+      expect(item.segmentCount).toBeLessThanOrEqual(5);
+    }
+  });
+
   it('continues upward after each cluster', () => {
     const generator = createGenerator({ seed: 7, startY: 0 });
     const first = nextCluster(generator);

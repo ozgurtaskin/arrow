@@ -13,7 +13,6 @@ const BAND_STYLES = {
   blue: '#244bff'
 };
 
-const STATIC_RAINBOW_STYLES = ['#ff3f7f', '#ff8a24', '#ffdf24', '#37e85f', '#27d7ff', '#4b5bff'];
 const MAX_PULL_FOR_STRING = 190;
 const STICK_WOBBLE_MS = 160;
 
@@ -232,22 +231,52 @@ function drawArrow(ctx, entity) {
   ctx.restore();
 }
 
-function strokeStaticRainbowSegments(ctx, drawSegment) {
-  for (let index = 0; index < STATIC_RAINBOW_STYLES.length; index += 1) {
-    const start = index / STATIC_RAINBOW_STYLES.length;
-    const end = (index + 1) / STATIC_RAINBOW_STYLES.length;
-    ctx.strokeStyle = STATIC_RAINBOW_STYLES[index];
-    drawSegment(start, end);
+function traceRuleWoodShape(ctx, entity) {
+  if (entity.shape === 'circle') {
+    ctx.beginPath();
+    ctx.arc(0, 0, entity.radius, 0, Math.PI * 2);
+    return;
   }
+  roundedRect(ctx, -entity.width / 2, -entity.height / 2, entity.width, entity.height, 8);
+}
+
+function drawRuleWoodGrain(ctx, entity) {
+  const width = entity.shape === 'circle' ? entity.radius * 2 : entity.width;
+  const height = entity.shape === 'circle' ? entity.radius * 2 : entity.height;
+  ctx.strokeStyle = 'rgba(113, 72, 35, 0.25)';
+  ctx.lineWidth = 2;
+  for (let y = -height * 0.28; y <= height * 0.28; y += 13) {
+    const span = entity.shape === 'circle'
+      ? Math.sqrt(Math.max(0, entity.radius * entity.radius - y * y)) * 0.72
+      : width / 2 - 16;
+    ctx.beginPath();
+    ctx.moveTo(-span, y);
+    ctx.quadraticCurveTo(0, y + 4, span, y - 3);
+    ctx.stroke();
+  }
+}
+
+function drawRuleWoodCore(ctx, entity) {
+  ctx.save();
+  traceRuleWoodShape(ctx, entity);
+  ctx.fillStyle = '#c9955e';
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#8d6037';
+  ctx.stroke();
+
+  traceRuleWoodShape(ctx, entity);
+  ctx.clip();
+  drawRuleWoodGrain(ctx, entity);
+  ctx.restore();
 }
 
 function drawCircularRuleWood(ctx, entity) {
   const outer = entity.bands.layers[0];
-  const rainbow = entity.bands.layers[1];
   const outerRadius = Math.max(0.1, entity.radius - outer.thickness / 2);
-  const rainbowRadius = Math.max(0.1, entity.radius - outer.thickness - rainbow.thickness / 2);
-  const coreRadius = Math.max(0.1, entity.radius - outer.thickness - rainbow.thickness);
 
+  drawRuleWoodCore(ctx, entity);
+  ctx.save();
   ctx.lineCap = 'butt';
   ctx.lineWidth = outer.thickness;
   for (const segment of outer.segments) {
@@ -256,29 +285,12 @@ function drawCircularRuleWood(ctx, entity) {
     ctx.arc(0, 0, outerRadius, segment.start * Math.PI * 2, segment.end * Math.PI * 2);
     ctx.stroke();
   }
-
-  ctx.lineWidth = rainbow.thickness;
-  strokeStaticRainbowSegments(ctx, (start, end) => {
-    ctx.beginPath();
-    ctx.arc(0, 0, rainbowRadius, start * Math.PI * 2, end * Math.PI * 2);
-    ctx.stroke();
-  });
-
-  ctx.beginPath();
-  ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
-  ctx.fillStyle = '#15100d';
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = '#201711';
-  ctx.stroke();
+  ctx.restore();
 }
 
 function drawRectRuleWood(ctx, entity) {
   const outer = entity.bands.layers[0];
-  const rainbow = entity.bands.layers[1];
   const outerInset = outer.thickness / 2;
-  const rainbowInset = outer.thickness + rainbow.thickness / 2;
-  const coreInset = outer.thickness + rainbow.thickness;
   const loopWidth = Math.max(1, entity.width);
   const loopHeight = Math.max(1, entity.height);
   const halfWidth = loopWidth / 2;
@@ -333,6 +345,7 @@ function drawRectRuleWood(ctx, entity) {
     ctx.stroke();
   }
 
+  drawRuleWoodCore(ctx, entity);
   ctx.save();
   roundedRect(ctx, -halfWidth, -halfHeight, loopWidth, loopHeight, 6);
   ctx.clip();
@@ -344,19 +357,7 @@ function drawRectRuleWood(ctx, entity) {
     ctx.strokeStyle = BAND_STYLES[segment.color];
     strokeSegment(segment.start, segment.end, outerInset);
   }
-
-  ctx.lineWidth = rainbow.thickness;
-  strokeStaticRainbowSegments(ctx, (start, end) => strokeSegment(start, end, rainbowInset));
   ctx.restore();
-
-  const coreWidth = Math.max(1, entity.width - coreInset * 2);
-  const coreHeight = Math.max(1, entity.height - coreInset * 2);
-  roundedRect(ctx, -coreWidth / 2, -coreHeight / 2, coreWidth, coreHeight, 6);
-  ctx.fillStyle = '#15100d';
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = '#201711';
-  ctx.stroke();
 }
 
 function drawRuleWood(ctx, entity, time) {

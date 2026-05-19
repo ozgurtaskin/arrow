@@ -13,8 +13,7 @@ function blueRuleWoodCircle() {
         name: 'outer',
         thickness: 12,
         segments: [{ color: 'blue', start: 0, end: 1, size: 1 }]
-      },
-      { kind: 'rainbow', name: 'rainbow', thickness: 12, segments: [{ color: 'rainbow', start: 0, end: 1, size: 1 }] }
+      }
     ]
   };
   return body;

@@ -51,7 +51,7 @@ export function createCirclePiece({ x, y, radius, material, isStatic = false, se
   }), { type: 'piece', material, shape: 'circle', radius, wobble: 0 });
 }
 
-export function createRuleWoodBox({ x, y, width, height, angle = 0, seed = 1, settings = {} }) {
+export function createRuleWoodBox({ x, y, width, height, angle = 0, seed = 1, colorCount, segmentCount, settings = {} }) {
   const config = getMaterialConfig('wood', settings);
   return attachEntity(Matter.Bodies.rectangle(x, y, width, height, {
     label: 'rule-wood-box',
@@ -68,11 +68,11 @@ export function createRuleWoodBox({ x, y, width, height, angle = 0, seed = 1, se
     width,
     height,
     wobble: 0,
-    bands: createRuleWoodBands({ seed })
+    bands: createRuleWoodBands({ seed, colorCount, segmentCount })
   });
 }
 
-export function createRuleWoodCircle({ x, y, radius, seed = 1, settings = {} }) {
+export function createRuleWoodCircle({ x, y, radius, seed = 1, colorCount, segmentCount, settings = {} }) {
   const config = getMaterialConfig('wood', settings);
   return attachEntity(Matter.Bodies.circle(x, y, radius, {
     label: 'rule-wood-circle',
@@ -86,7 +86,7 @@ export function createRuleWoodCircle({ x, y, radius, seed = 1, settings = {} }) 
     shape: 'circle',
     radius,
     wobble: 0,
-    bands: createRuleWoodBands({ seed })
+    bands: createRuleWoodBands({ seed, colorCount, segmentCount })
   });
 }
 

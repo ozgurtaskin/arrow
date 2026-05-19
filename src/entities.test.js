@@ -28,11 +28,21 @@ describe('entity factories', () => {
   });
 
   it('creates static rule wood boxes with deterministic band metadata', () => {
-    const body = createRuleWoodBox({ x: 10, y: 20, width: 120, height: 80, seed: 8, settings: { woodMass: 1 } });
+    const body = createRuleWoodBox({
+      x: 10,
+      y: 20,
+      width: 120,
+      height: 80,
+      seed: 8,
+      colorCount: 1,
+      segmentCount: 3,
+      settings: { woodMass: 1 }
+    });
     expect(body.isStatic).toBe(true);
     expect(body.plugin.entity.type).toBe('ruleWood');
     expect(body.plugin.entity.material).toBe('wood');
     expect(body.plugin.entity.bands.layers[0].segments.length).toBeGreaterThan(0);
+    expect(new Set(body.plugin.entity.bands.layers[0].segments.map((segment) => segment.color)).size).toBe(1);
   });
 
   it('creates static rule wood circles with deterministic band metadata', () => {
