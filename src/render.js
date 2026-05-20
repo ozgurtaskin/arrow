@@ -521,25 +521,11 @@ function drawFloatingTexts(ctx, floaters) {
   }
 }
 
-function drawTrajectory(ctx, aimState, startPoint) {
-  const step = 18;
-  ctx.fillStyle = 'rgba(255,255,255,0.78)';
-  for (let i = 1; i <= 10; i += 1) {
-    const t = i * step;
-    const x = startPoint.x + aimState.launchVector.x * t;
-    const y = startPoint.y + aimState.launchVector.y * t + i * i * 2.2;
-    ctx.beginPath();
-    ctx.rect(x - 5, y - 5, 10, 10);
-    ctx.fill();
-  }
-}
-
 function drawBowPreview(ctx, aimState) {
   const geometry = getBowPreviewGeometry(aimState);
   const center = aimState.center;
   const angle = aimState.angle;
 
-  drawTrajectory(ctx, aimState, geometry.arrowTip);
   ctx.save();
   ctx.translate(center.x, center.y);
   ctx.rotate(angle);

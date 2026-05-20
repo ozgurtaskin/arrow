@@ -9,13 +9,37 @@ describe('getBowPreviewGeometry', () => {
       launchVector: { x: 0.8944271909999159, y: -0.4472135954999579 },
       angle: -Math.PI / 4
     };
-    const geometry = getBowPreviewGeometry(aimState, { bowRadius: 60, arcLimit: 1, arrowLength: 90, nockInset: 9 });
+    const geometry = getBowPreviewGeometry(aimState, { bowRadius: 60, arcLimit: 1, arrowLength: 90, nockInset: 9, stringSlack: 0 });
 
     expect(geometry.pullPoint).toEqual({ x: 40, y: 130 });
     expect(geometry.stringTop.x).not.toBeCloseTo(100);
     expect(geometry.stringBottom.x).not.toBeCloseTo(100);
     expect(geometry.arrowCenter.x).toBeGreaterThan(geometry.pullPoint.x);
     expect(geometry.arrowCenter.y).toBeLessThan(geometry.pullPoint.y);
+  });
+
+  it('keeps the bow string relaxed through the early pull slack', () => {
+    const geometry = getBowPreviewGeometry({
+      center: { x: 100, y: 100 },
+      visualPull: { x: 12, y: 0 },
+      launchVector: { x: -1, y: 0 },
+      angle: Math.PI
+    }, { stringSlack: 20, arrowLength: 60, nockInset: 6 });
+
+    expect(geometry.pullPoint).toEqual({ x: 100, y: 100 });
+    expect(geometry.arrowCenter.x).toBe(76);
+  });
+
+  it('starts stretching the bow string only after slack is exceeded', () => {
+    const geometry = getBowPreviewGeometry({
+      center: { x: 100, y: 100 },
+      visualPull: { x: 50, y: 0 },
+      launchVector: { x: -1, y: 0 },
+      angle: Math.PI
+    }, { stringSlack: 20, arrowLength: 60, nockInset: 6 });
+
+    expect(geometry.pullPoint).toEqual({ x: 130, y: 100 });
+    expect(geometry.arrowCenter.x).toBe(106);
   });
 });
 

@@ -1,4 +1,4 @@
-import { ARROW_LENGTH } from './tuning.js';
+import { ARROW_LENGTH, STRING_SLACK_PULL } from './tuning.js';
 
 export function rotatePoint(point, angle) {
   const cos = Math.cos(angle);
@@ -31,10 +31,24 @@ export function getStuckArrowPose(targetBody, arrowEntity) {
   };
 }
 
-export function getBowPreviewGeometry(aimState, { bowRadius = 58, arcLimit = 1.15, arrowLength = ARROW_LENGTH, nockInset = 8 } = {}) {
+function pullAfterSlack(visualPull, slack) {
+  const distance = Math.hypot(visualPull.x, visualPull.y);
+  if (distance <= slack || distance <= 0.0001) return { x: 0, y: 0 };
+  const scale = (distance - slack) / distance;
+  return {
+    x: visualPull.x * scale,
+    y: visualPull.y * scale
+  };
+}
+
+export function getBowPreviewGeometry(
+  aimState,
+  { bowRadius = 58, arcLimit = 1.15, arrowLength = ARROW_LENGTH, nockInset = 8, stringSlack = STRING_SLACK_PULL } = {}
+) {
+  const stringPull = pullAfterSlack(aimState.visualPull, stringSlack);
   const pullPoint = {
-    x: aimState.center.x + aimState.visualPull.x,
-    y: aimState.center.y + aimState.visualPull.y
+    x: aimState.center.x + stringPull.x,
+    y: aimState.center.y + stringPull.y
   };
   const stringTop = addPoints(aimState.center, rotatePoint({
     x: Math.cos(-arcLimit) * bowRadius,
